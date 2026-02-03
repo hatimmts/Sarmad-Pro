@@ -674,7 +674,7 @@
                 }
                 
                 rs[idx].status = 'approved';
-                rs[idx].approved_at = firebase.firestore.FieldValue.serverTimestamp();
+                rs[idx].approved_at = new Date();
                 rs[idx].approved_by = auth.currentUser.phoneNumber;
                 rs[idx].amount = parseFloat(amt);
                 
@@ -720,9 +720,9 @@
                 return;
             }
             
-            rs[idx].status = 'rejected';
-            rs[idx].rejected_at = firebase.firestore.FieldValue.serverTimestamp();
-            rs[idx].rejected_by = auth.currentUser.phoneNumber;
+                rs[idx].status = 'rejected';
+                rs[idx].rejected_at = new Date();
+                rs[idx].rejected_by = auth.currentUser.phoneNumber;
             
             await ref.update({ 
                 requests: rs,
