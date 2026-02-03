@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Sarmad Admin</title>
+    <title>Sarmad Admin | Control Panel</title>
     <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;700&family=Orbitron:wght@700&display=swap" rel="stylesheet">
     <style>
         :root { --gold: #d4af37; --bg: #000; --white: #fff; --grey: #555; }
@@ -11,7 +11,7 @@
         header { background: #000; padding: 20px 15px; border-bottom: 2px solid var(--gold); margin-bottom: 20px; }
         .sub-header { display: flex; justify-content: space-between; align-items: center; max-width: 500px; margin: 0 auto; }
         .card { background: #0a0a0a; border: 1px solid #222; padding: 20px; border-radius: 15px; margin-bottom: 20px; }
-        .clickable { color: var(--gold); border: 1px solid var(--gold); background: none; padding: 8px 15px; border-radius: 8px; cursor: pointer; font-weight: bold; }
+        .clickable { color: var(--gold); border: 1px solid var(--gold); background: none; padding: 8px 15px; border-radius: 8px; cursor: pointer; font-weight: bold; transition: 0.2s; }
         .clickable:disabled { color: var(--grey); border-color: var(--grey); }
         input, select { background: #111; border: 1px solid #333; color: #fff; padding: 12px; width: 100%; border-radius: 8px; box-sizing: border-box; text-align: center; margin-bottom: 10px; }
         .hidden { display: none; }
@@ -22,7 +22,7 @@
 <header>
     <div style="text-align:center; margin-bottom:10px;"><div style="font-family:'Orbitron'; color:var(--white); font-size:1.5rem;">SARMAD ADMIN</div></div>
     <div class="sub-header">
-        <div class="clickable" style="font-size: 0.7rem; border:none;" onclick="auth.signOut().then(()=>location.reload())" id="logout-btn">Logout</div>
+        <div class="clickable" style="font-size:0.7rem; border:none;" onclick="auth.signOut().then(()=>location.reload())" id="logout-btn">Logout</div>
         <button class="clickable" onclick="toggleLang()" id="lang-switcher">عربي</button>
     </div>
 </header>
@@ -36,9 +36,17 @@
     </div>
 
     <div id="dashboard" class="hidden">
+        <div id="price-card" class="card hidden" style="border: 1px solid var(--gold);">
+            <h4 style="color:var(--gold); margin:0 0 10px 0;">Update Token Price</h4>
+            <div style="display:flex; gap:10px;">
+                <input type="number" id="new-price" step="0.01" placeholder="Price (0.10)" style="margin:0;">
+                <button class="clickable" onclick="updatePrice()" id="price-btn">Update</button>
+            </div>
+        </div>
+
         <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px;">
             <h3 id="t-title" style="margin:0;">Pending Requests</h3>
-            <button class="clickable" id="refresh-admin-btn" onclick="loadReqs(true)" style="font-size:0.7rem;">Refresh</button>
+            <button class="clickable" id="ref-btn" onclick="loadReqs(true)" style="font-size:0.7rem;">Refresh</button>
         </div>
         <div id="pending-list"></div>
     </div>
@@ -56,13 +64,12 @@
 
     let currentLang = 'en';
     const langData = {
-        en: { switcher: 'عربي', logout: 'Logout', login: 'Admin Login', check: 'Verify', title: 'Pending Requests', refresh: 'Refresh', amt: 'Amount', approve: 'Approve', reject: 'Reject' },
-        ar: { switcher: 'EN', logout: 'خروج', login: 'دخول الإدارة', check: 'تحقق', title: 'الطلبات المعلقة', refresh: 'تحديث', amt: 'المبلغ', approve: 'اعتماد', reject: 'رفض' }
+        en: { switcher: 'عربي', logout: 'Logout', login: 'Admin Login', check: 'Verify', title: 'Pending Requests', refresh: 'Refresh', rPrompt: 'Select Reason...', r1: 'Invalid TXID', r2: 'Used TXID', r3: 'Amount Error' },
+        ar: { switcher: 'EN', logout: 'خروج', login: 'دخول الإدارة', check: 'تحقق', title: 'الطلبات المعلقة', refresh: 'تحديث', rPrompt: 'اختر السبب...', r1: 'رقم غير صحيح', r2: 'مستخدم سابقاً', r3: 'خطأ بالمبلغ' }
     };
 
     function startTimer(id, text) {
-        const b = document.getElementById(id); b.disabled = true;
-        let c = 10;
+        const b = document.getElementById(id); b.disabled = true; let c = 10;
         const i = setInterval(() => { b.innerText = c + "s"; c--; if(c<0){ clearInterval(i); b.disabled = false; b.innerText = text; } }, 1000);
     }
 
@@ -74,7 +81,8 @@
         document.getElementById('t-login').innerText = langData[currentLang].login;
         document.getElementById('t-check').innerText = langData[currentLang].check;
         document.getElementById('t-title').innerText = langData[currentLang].title;
-        document.getElementById('refresh-admin-btn').innerText = langData[currentLang].refresh;
+        document.getElementById('ref-btn').innerText = langData[currentLang].refresh;
+        loadReqs();
     }
 
     async function checkAdmin() {
@@ -83,46 +91,64 @@
         if(s.exists && s.data().active) {
             window.recaptchaVerifier = new firebase.auth.RecaptchaVerifier('recaptcha-container', {size:'invisible'});
             auth.signInWithPhoneNumber(p, window.recaptchaVerifier).then(res => {
-                const otp = prompt("Enter OTP");
-                res.confirm(otp).then(() => location.reload());
+                const otp = prompt("OTP?"); res.confirm(otp).then(() => location.reload());
             });
         }
     }
 
-    auth.onAuthStateChanged(u => { if(u) { document.getElementById('auth-ui').classList.add('hidden'); document.getElementById('dashboard').classList.remove('hidden'); loadReqs(); } });
+    async function updatePrice() {
+        const np = document.getElementById('new-price').value; if(!np) return;
+        startTimer('price-btn', 'Update');
+        await db.collection('settings').doc('prices').update({ srmd_price: parseFloat(np) });
+        alert("Price Updated!");
+    }
 
-    function loadReqs(isManual = false) {
-        if(isManual) startTimer('refresh-admin-btn', langData[currentLang].refresh);
+    auth.onAuthStateChanged(async u => { 
+        if(u) {
+            document.getElementById('auth-ui').classList.add('hidden');
+            document.getElementById('dashboard').classList.remove('hidden');
+            const myD = (await db.collection('admins').doc(u.phoneNumber).get()).data();
+            if(myD.role === 'owner') document.getElementById('price-card').classList.remove('hidden');
+            loadReqs();
+        }
+    });
+
+    function loadReqs(isM = false) {
+        if(isM) startTimer('ref-btn', langData[currentLang].refresh);
         db.collection('investors').get().then(snap => {
             const list = document.getElementById('pending-list'); list.innerHTML = '';
             snap.forEach(doc => {
                 (doc.data().requests || []).forEach((req, idx) => {
                     if(req.status === 'pending') {
-                        list.innerHTML += `<div class="card"><p>User: ${doc.id}</p><span onclick="navigator.clipboard.writeText('${req.txid}')" style="color:var(--gold); cursor:pointer;">${req.txid}</span><div style="margin-top:10px;"><input type="number" id="a-${doc.id}-${idx}" placeholder="${langData[currentLang].amt}"><button class="clickable" onclick="approveTx('${doc.id}', ${idx})">${langData[currentLang].approve}</button> <button class="clickable" style="color:red;" onclick="rejectTx('${doc.id}', ${idx})">${langData[currentLang].reject}</button></div></div>`;
+                        list.innerHTML += `<div class="card"><p>User: ${doc.id}</p><span onclick="navigator.clipboard.writeText('${req.txid}')" style="color:var(--gold); cursor:pointer;">${req.txid}</span>
+                        <div style="margin-top:10px;"><input type="number" id="amt-${doc.id}-${idx}" placeholder="Amount">
+                        <button class="clickable" onclick="approveTx('${doc.id}', ${idx})">Approve</button>
+                        <hr style="border:0; border-top:1px solid #222; margin:10px 0;">
+                        <select id="res-${doc.id}-${idx}"><option value="">${langData[currentLang].rPrompt}</option><option value="invalid_txid">${langData[currentLang].r1}</option><option value="used_txid">${langData[currentLang].r2}</option></select>
+                        <button class="clickable" style="color:red; border-color:red;" onclick="rejectTx('${doc.id}', ${idx})">Reject</button></div></div>`;
                     }
                 });
             });
         });
     }
 
-    async function approveTx(phone, idx) {
-        const amt = document.getElementById(`a-${phone}-${idx}`).value;
-        const ref = db.collection('investors').doc(phone);
+    async function approveTx(ph, idx) {
+        const amt = document.getElementById(`amt-${ph}-${idx}`).value; if(!amt) return;
+        const ref = db.collection('investors').doc(ph);
         await db.runTransaction(async (t) => {
-            const s = await t.get(ref);
-            let rs = s.data().requests; rs[idx].status = 'approved';
+            const s = await t.get(ref); let rs = s.data().requests; rs[idx].status = 'approved';
             t.update(ref, { balance: (s.data().balance || 0) + parseFloat(amt), requests: rs });
+            db.collection('audit_logs').add({ action: 'approve', investor: ph, amount: amt, by: auth.currentUser.phoneNumber, time: firebase.firestore.FieldValue.serverTimestamp() });
         });
         alert('Approved!'); loadReqs();
     }
 
-    async function rejectTx(phone, idx) {
-        const rc = prompt("1-Invalid, 2-Used, 3-Amt, 4-Network");
-        let r = rc==="1"?"invalid_txid":rc==="2"?"used_txid":rc==="3"?"amount_mismatch":"wrong_network";
-        const ref = db.collection('investors').doc(phone);
-        const s = await ref.get(); let rs = s.data().requests;
-        rs[idx].status = 'rejected'; rs[idx].reasonCode = r;
+    async function rejectTx(ph, idx) {
+        const rc = document.getElementById(`res-${ph}-${idx}`).value; if(!rc) return;
+        const ref = db.collection('investors').doc(ph);
+        const s = await ref.get(); let rs = s.data().requests; rs[idx].status = 'rejected'; rs[idx].reasonCode = rc;
         await ref.update({ requests: rs });
+        db.collection('audit_logs').add({ action: 'reject', investor: ph, reason: rc, by: auth.currentUser.phoneNumber, time: firebase.firestore.FieldValue.serverTimestamp() });
         alert('Rejected!'); loadReqs();
     }
 </script>
