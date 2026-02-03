@@ -1,77 +1,55 @@
 <!DOCTYPE html>
-<html lang="ar" dir="rtl">
+<html lang="ar" dir="rtl" id="admin-html">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Sarmad Admin | الرقابة المالية</title>
-    <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;700&display=swap" rel="stylesheet">
+    <title>Sarmad Admin | Control Panel</title>
+    <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;700&family=Orbitron:wght@700&display=swap" rel="stylesheet">
     <style>
-        :root { --gold: #d4af37; --bg: #000; --white: #ffffff; --grey: #888; --red: #ff4444; }
-        body { background: var(--bg); color: var(--white); font-family: 'Tajawal', sans-serif; padding: 15px; margin: 0; }
-        
-        .card { background: #0a0a0a; border: 1px solid #222; padding: 20px; border-radius: 15px; margin-bottom: 20px; box-shadow: 0 4px 10px rgba(0,0,0,0.5); }
-        
-        /* الأزرار القابلة للضغط - ذهبية */
-        .clickable { 
-            color: var(--gold) !important; 
-            border: 1px solid var(--gold); 
-            background: none; 
-            padding: 10px 20px; 
-            border-radius: 8px; 
-            cursor: pointer; 
-            font-weight: bold; 
-            transition: 0.2s; 
-            display: inline-block;
-            text-align: center;
-        }
+        :root { --gold: #d4af37; --bg: #000; --white: #fff; --grey: #888; --red: #ff4444; }
+        body { background: var(--bg); color: var(--white); font-family: 'Tajawal', sans-serif; margin: 0; }
+        header { background: #000; padding: 20px 15px 10px 15px; border-bottom: 2px solid var(--gold); }
+        .logo-container { text-align: center; margin-bottom: 15px; }
+        .logo { font-family: 'Orbitron', sans-serif; color: var(--white); font-size: 1.5rem; }
+        .sub-header { display: flex; justify-content: space-between; align-items: center; max-width: 500px; margin: 0 auto; }
+        .card { background: #0a0a0a; border: 1px solid #222; padding: 20px; border-radius: 15px; margin-bottom: 20px; }
+        .clickable { color: var(--gold) !important; border: 1px solid var(--gold); background: none; padding: 8px 15px; border-radius: 8px; cursor: pointer; font-weight: bold; transition: 0.2s; }
         .clickable:active { color: var(--grey) !important; border-color: var(--grey) !important; transform: scale(0.95); }
-        
-        /* زر الرفض متميز بلون أحمر هادئ للتحذير */
-        .btn-reject { color: var(--red) !important; border-color: var(--red) !important; }
-
-        input { 
-            background: #000; border: 1px solid #333; color: #fff; padding: 12px; 
-            width: 100%; border-radius: 8px; box-sizing: border-box; text-align: center; font-size: 1rem;
-        }
-
-        .action-group { margin-top: 15px; display: flex; flex-direction: column; gap: 12px; } /* أبعاد إضافية بين العناصر */
-        
-        .txid-display { 
-            background: #111; color: var(--gold); padding: 12px; border-radius: 8px; 
-            font-family: monospace; cursor: pointer; border: 1px dashed var(--gold); 
-            display: block; margin: 10px 0; text-align: center; word-break: break-all;
-        }
-
+        .btn-rej { color: var(--red) !important; border-color: var(--red) !important; }
+        .container { max-width: 500px; margin: auto; padding: 20px; }
+        input { width: 100%; padding: 12px; margin: 10px 0; background: #000; border: 1px solid #333; color: #fff; border-radius: 8px; text-align: center; }
+        .action-group { margin-top: 15px; display: flex; flex-direction: column; gap: 12px; }
+        .txid-box { background: #111; color: var(--gold); padding: 12px; border-radius: 8px; font-family: monospace; cursor: pointer; border: 1px dashed var(--gold); display: block; text-align: center; word-break: break-all; }
+        .en-mode { direction: ltr; font-family: sans-serif; }
         .hidden { display: none; }
-        h3 { border-bottom: 1px solid #333; padding-bottom: 10px; margin-top: 0; }
-        .nav-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
     </style>
 </head>
-<body>
+<body id="body-tag">
 
-<div id="auth-ui" style="max-width:400px; margin: 100px auto; text-align: center;">
-    <div class="card">
-        <h3>دخول الإدارة</h3>
+<header>
+    <div class="logo-container"><div class="logo">SARMAD ADMIN</div></div>
+    <div class="sub-header">
+        <div class="clickable" style="font-size: 0.7rem; border:none;" onclick="auth.signOut().then(()=>location.reload())">Logout/خروج</div>
+        <button class="clickable" onclick="toggleLang()" id="lang-switcher">EN</button>
+    </div>
+</header>
+
+<div class="container">
+    <div id="auth-ui" class="card" style="text-align:center;">
+        <h3 id="t-login">دخول الإدارة</h3>
         <input type="tel" id="admin-phone" placeholder="+962xxxxxxxxx">
-        <button class="clickable" style="width:100%; margin-top:15px;" onclick="checkAdmin()">تحقق من الصلاحية</button>
-        <div id="recaptcha-container" style="margin-top:10px;"></div>
-        
+        <div id="recaptcha-container"></div>
+        <button class="clickable" style="width:100%;" onclick="checkAdmin()" id="t-check">تحقق</button>
         <div id="otp-area" class="hidden">
-            <input type="text" id="admin-otp" placeholder="رمز OTP" style="margin-top:15px;">
-            <button class="clickable" style="width:100%; margin-top:15px;" onclick="verifyAdminOTP()">تأكيد الدخول</button>
+            <input type="text" id="admin-otp" placeholder="OTP">
+            <button class="clickable" style="width:100%;" onclick="verifyAdminOTP()" id="t-verify">دخول</button>
         </div>
     </div>
-    <p id="auth-msg" style="color:var(--red)"></p>
-</div>
 
-<div id="dashboard" class="hidden">
-    <div class="nav-header">
-        <h3 style="margin:0;">لوحة الرقابة الماليّة</h3>
-        <button class="clickable" onclick="auth.signOut().then(()=>location.reload())" style="font-size:0.8rem;">خروج</button>
+    <div id="dashboard" class="hidden">
+        <h3 id="t-title" style="text-align:center;">الطلبات المعلقة</h3>
+        <div id="pending-list"></div>
     </div>
-
-    <div id="pending-list">
-        </div>
 </div>
 
 <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
@@ -84,108 +62,88 @@
     const auth = firebase.auth();
     const db = firebase.firestore();
 
+    let currentLang = 'ar';
+    const langData = {
+        ar: { switcher: 'EN', login: 'دخول الإدارة', check: 'تحقق', verify: 'دخول', title: 'الطلبات المعلقة', copy: 'تم النسخ', approve: 'إعتماد ✅', reject: 'رفض ❌', amt: 'أدخل المبلغ' },
+        en: { switcher: 'عربي', login: 'Admin Login', check: 'Check', verify: 'Verify', title: 'Pending Requests', copy: 'Copied', approve: 'Approve ✅', reject: 'Reject ❌', amt: 'Enter Amount' }
+    };
+
+    function toggleLang() {
+        currentLang = currentLang === 'ar' ? 'en' : 'ar';
+        document.getElementById('admin-html').dir = currentLang === 'ar' ? 'rtl' : 'ltr';
+        if(currentLang === 'en') document.getElementById('body-tag').classList.add('en-mode'); else document.getElementById('body-tag').classList.remove('en-mode');
+        document.getElementById('lang-switcher').innerText = langData[currentLang].switcher;
+        document.getElementById('t-login').innerText = langData[currentLang].login;
+        document.getElementById('t-check').innerText = langData[currentLang].check;
+        document.getElementById('t-title').innerText = langData[currentLang].title;
+    }
+
     async function checkAdmin() {
         const p = document.getElementById('admin-phone').value;
-        if(!p) return;
-        try {
-            const snap = await db.collection('admins').doc(p).get();
-            if(snap.exists && snap.data().active) {
-                document.getElementById('otp-area').classList.remove('hidden');
-                window.recaptchaVerifier = new firebase.auth.RecaptchaVerifier('recaptcha-container', {size:'invisible'});
-                auth.signInWithPhoneNumber(p, window.recaptchaVerifier).then(res => window.confirmationResult = res);
-            } else {
-                document.getElementById('auth-msg').innerText = "عذراً، لا تملك صلاحية الوصول";
-            }
-        } catch(e) { document.getElementById('auth-msg').innerText = "خطأ في التحقق"; }
+        const s = await db.collection('admins').doc(p).get();
+        if(s.exists && s.data().active) {
+            document.getElementById('otp-area').classList.remove('hidden');
+            window.recaptchaVerifier = new firebase.auth.RecaptchaVerifier('recaptcha-container', {size:'invisible'});
+            auth.signInWithPhoneNumber(p, window.recaptchaVerifier).then(res => window.confirmationResult = res);
+        }
     }
 
     function verifyAdminOTP() {
         const c = document.getElementById('admin-otp').value;
-        window.confirmationResult.confirm(c).then(() => location.reload()).catch(()=>alert("كود خاطئ"));
+        window.confirmationResult.confirm(c).then(() => location.reload());
     }
 
-    auth.onAuthStateChanged(user => {
-        if(user) {
-            document.getElementById('auth-ui').classList.add('hidden');
-            document.getElementById('dashboard').classList.remove('hidden');
-            loadRequests();
-        }
-    });
+    auth.onAuthStateChanged(u => { if(u) { document.getElementById('auth-ui').classList.add('hidden'); document.getElementById('dashboard').classList.remove('hidden'); loadReqs(); } });
 
-    function loadRequests() {
+    function loadReqs() {
         db.collection('investors').onSnapshot(snap => {
-            const list = document.getElementById('pending-list');
-            list.innerHTML = '';
-            let hasRequests = false;
-
+            const list = document.getElementById('pending-list'); list.innerHTML = '';
             snap.forEach(doc => {
                 const inv = doc.data();
                 (inv.requests || []).forEach((req, idx) => {
                     if(req.status === 'pending') {
-                        hasRequests = true;
-                        list.innerHTML += `
-                        <div class="card">
-                            <p style="font-size:0.9rem; color:var(--white);">المستثمر: <b>${doc.id}</b></p>
-                            <span class="txid-display" onclick="copyValue('${req.txid}')">${req.txid}</span>
-                            <small style="color:var(--grey); display:block; text-align:center;">إضغط على الرمز أعلاه للنسخ</small>
-                            
+                        list.innerHTML += `<div class="card">
+                            <p>Investor: ${doc.id}</p>
+                            <span class="txid-box" onclick="copyValue('${req.txid}')">${req.txid}</span>
                             <div class="action-group">
-                                <input type="number" id="amt-${doc.id}-${idx}" placeholder="أدخل مبلغ الرصيد ليتم إضافته">
-                                <button class="clickable" onclick="approveTx('${doc.id}', ${idx})">إعتماد الرصيد ✅</button>
-                                <button class="clickable btn-reject" onclick="rejectTx('${doc.id}', ${idx})">رفض الطلب ❌</button>
+                                <input type="number" id="amt-${doc.id}-${idx}" placeholder="${langData[currentLang].amt}">
+                                <button class="clickable" onclick="approveTx('${doc.id}', ${idx})">${langData[currentLang].approve}</button>
+                                <button class="clickable btn-rej" onclick="rejectTx('${doc.id}', ${idx})">${langData[currentLang].reject}</button>
                             </div>
                         </div>`;
                     }
                 });
             });
-            if(!hasRequests) list.innerHTML = '<p style="text-align:center; color:var(--grey);">لا توجد طلبات معلقة حالياً</p>';
         });
     }
 
-    function copyValue(val) {
-        navigator.clipboard.writeText(val).then(() => alert('تم نسخ الـ TXID بنجاح'));
-    }
+    function copyValue(v) { navigator.clipboard.writeText(v).then(() => alert(langData[currentLang].copy)); }
 
     async function approveTx(phone, idx) {
         const amt = document.getElementById(`amt-${phone}-${idx}`).value;
-        if(!amt) return alert("يرجى إدخال المبلغ أولاً");
-        
+        if(!amt) return;
         const ref = db.collection('investors').doc(phone);
-        try {
-            await db.runTransaction(async (t) => {
-                const s = await t.get(ref);
-                let reqs = s.data().requests;
-                if(reqs[idx].status !== 'pending') throw "تمت المعالجة مسبقاً";
-                
-                reqs[idx].status = 'approved';
-                t.update(ref, {
-                    balance: (s.data().balance || 0) + parseFloat(amt),
-                    requests: reqs
-                });
-                
-                db.collection('audit_logs').add({
-                    action: 'approve', investor: phone, amount: amt, by: auth.currentUser.phoneNumber, time: firebase.firestore.FieldValue.serverTimestamp()
-                });
-            });
-            alert('تم اعتماد الرصيد وتحديث محفظة المستثمر');
-        } catch(e) { alert('فشل الإعتماد: ' + e); }
+        await db.runTransaction(async (t) => {
+            const s = await t.get(ref);
+            let reqs = s.data().requests;
+            reqs[idx].status = 'approved';
+            t.update(ref, { balance: (s.data().balance || 0) + parseFloat(amt), requests: reqs });
+            db.collection('audit_logs').add({ action: 'approve', investor: phone, amount: amt, by: auth.currentUser.phoneNumber, time: firebase.firestore.FieldValue.serverTimestamp() });
+        });
+        alert('Done ✅');
     }
 
     async function rejectTx(phone, idx) {
-        const reason = prompt('يرجى ذكر سبب الرفض ليظهر للمستثمر:');
-        if(!reason) return;
-        
+        const code = prompt("1-Invalid TXID, 2-Used TXID, 3-Amount Mismatch, 4-Wrong Network");
+        let rc = code==="1"?"invalid_txid":code==="2"?"used_txid":code==="3"?"amount_mismatch":code==="4"?"wrong_network":"";
+        if(!rc) return;
         const ref = db.collection('investors').doc(phone);
         const s = await ref.get();
         let reqs = s.data().requests;
-        reqs[idx].status = 'rejected';
-        reqs[idx].reason = reason;
-        
+        reqs[idx].status = 'rejected'; reqs[idx].reasonCode = rc;
         await ref.update({ requests: reqs });
-        db.collection('audit_logs').add({
-            action: 'reject', investor: phone, reason: reason, by: auth.currentUser.phoneNumber, time: firebase.firestore.FieldValue.serverTimestamp()
-        });
-        alert('تم رفض الطلب بنجاح');
+        db.collection('audit_logs').add({ action: 'reject', investor: phone, reason: rc, by: auth.currentUser.phoneNumber, time: firebase.firestore.FieldValue.serverTimestamp() });
+        alert('Rejected ❌');
     }
 </script>
 </body>
