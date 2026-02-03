@@ -14,16 +14,20 @@
         .logo { font-family: 'Orbitron', sans-serif; font-size: 1.5rem; color: var(--white); letter-spacing: 2px; }
         .sub-header { display: flex; justify-content: space-between; align-items: center; max-width: 500px; margin: 0 auto; }
         .card { background: #0a0a0a; border: 1px solid #222; padding: 20px; border-radius: 15px; margin-bottom: 20px; text-align: center; }
-        .clickable { color: var(--gold); border: 1px solid var(--gold); background: none; padding: 8px 15px; border-radius: 8px; cursor: pointer; font-weight: bold; transition: 0.2s; }
+        .clickable { color: var(--gold); border: 1px solid var(--gold); background: none; padding: 8px 15px; border-radius: 8px; cursor: pointer; font-weight: bold; transition: 0.2s; font-size: 0.9rem; }
+        .clickable:hover { background: rgba(212, 175, 55, 0.1); }
         .clickable:disabled { color: var(--grey); border-color: var(--grey); cursor: not-allowed; opacity: 0.6; }
         .btn-rej { color: var(--red) !important; border-color: var(--red) !important; }
         .stats-grid { display: flex; justify-content: space-around; margin-bottom: 10px; }
         .stat-box { flex: 1; }
         .stat-label { font-size: 0.65rem; color: var(--grey); text-transform: uppercase; display: block; margin-bottom: 5px; }
         .stat-val { font-size: 1.2rem; font-weight: bold; color: var(--gold); font-family: 'Orbitron', sans-serif; }
-        input, select { background: #111; border: 1px solid #333; color: #fff; padding: 12px; width: 100%; border-radius: 8px; box-sizing: border-box; text-align: center; margin-bottom: 10px; font-family: inherit; }
-        .txid-box { background: #111; color: var(--gold); padding: 12px; border-radius: 8px; font-family: monospace; cursor: pointer; border: 1px dashed var(--gold); display: block; margin: 10px 0; word-break: break-all; }
+        input, select { background: #111; border: 1px solid #333; color: #fff; padding: 12px; width: 100%; border-radius: 8px; box-sizing: border-box; text-align: center; margin-bottom: 10px; font-family: inherit; font-size: 0.9rem; }
+        .txid-box { background: #111; color: var(--gold); padding: 12px; border-radius: 8px; font-family: monospace; cursor: pointer; border: 1px dashed var(--gold); display: block; margin: 10px 0; word-break: break-all; font-size: 0.7rem; }
         .hidden { display: none; }
+        .danger-zone { border: 2px solid var(--red) !important; }
+        .section-title { color: var(--red); margin: 15px 0 8px 0; font-size: 0.85rem; font-weight: bold; }
+        .divider { border: 0; border-top: 1px solid #333; margin: 20px 0; }
     </style>
 </head>
 <body id="body-tag">
@@ -31,24 +35,27 @@
 <header>
     <div class="logo-container"><div class="logo">SARMAD ADMIN</div></div>
     <div class="sub-header">
-        <button class="clickable" style="border:none; color:var(--grey)" onclick="auth.signOut().then(()=>location.reload())" id="logout-btn">Logout</button>
+        <button class="clickable" style="border:none; color:var(--grey)" onclick="handleLogout()" id="logout-btn">Logout</button>
         <button class="clickable" onclick="toggleLang()" id="lang-switcher">عربي</button>
     </div>
 </header>
 
 <div class="container" style="max-width: 500px; margin: auto;">
+    <!-- Login UI -->
     <div id="auth-ui" class="card">
         <h3 id="t-login">Admin Login</h3>
         <input type="tel" id="admin-phone" placeholder="+962xxxxxxxxx">
         <div id="recaptcha-container"></div>
         <button class="clickable" style="width:100%" onclick="checkAdmin()" id="t-check">Verify Account</button>
         <div id="otp-area" class="hidden">
-            <input type="text" id="otp-input" placeholder="OTP Code">
+            <input type="text" id="otp-input" placeholder="OTP Code" maxlength="6" autocomplete="one-time-code">
             <button class="clickable" style="width:100%" onclick="verifyAdminOTP()" id="t-verify-otp">Login</button>
         </div>
     </div>
 
+    <!-- Dashboard -->
     <div id="dashboard" class="hidden">
+        <!-- Stats -->
         <div class="card" style="border-color: var(--gold);">
             <div class="stats-grid">
                 <div class="stat-box">
@@ -62,31 +69,65 @@
             </div>
         </div>
 
+        <!-- Add Accountant -->
         <div id="staff-card" class="card hidden" style="border: 1px solid var(--gold);">
-            <h4 style="color:var(--gold); margin:0 0 10px 0;">Add New Accountant</h4>
+            <h4 style="color:var(--gold); margin:0 0 15px 0;">Add New Accountant</h4>
             <input type="tel" id="new-staff-phone" placeholder="+962xxxxxxxxx">
-            <button class="clickable" onclick="addAccountant()">Add Accountant</button>
+            <button class="clickable" style="width:100%" onclick="addAccountant()">Add Accountant</button>
         </div>
 
+        <!-- Update Price -->
         <div id="price-card" class="card hidden" style="border: 1px solid var(--gold);">
-            <h4 id="t-price-title" style="color:var(--gold); margin:0 0 10px 0;">Update Token Price</h4>
+            <h4 id="t-price-title" style="color:var(--gold); margin:0 0 15px 0;">Update Token Price</h4>
             <div style="display:flex; gap:10px;">
-                <input type="number" id="new-price" step="0.01" placeholder="0.50" style="margin:0;">
+                <input type="number" id="new-price" step="0.01" placeholder="0.50" style="margin:0;" min="0.01">
                 <button class="clickable" onclick="updatePrice()" id="t-upd-btn">Update</button>
             </div>
         </div>
 
-        <div id="owner-tools" class="card hidden" style="border: 2px solid var(--red);">
-            <h4 style="color:var(--red); margin-top:0;">Cleaning Tools ⚠️</h4>
+        <!-- Owner Tools - Delete Menu -->
+        <div id="owner-tools" class="card hidden danger-zone">
+            <h4 style="color:var(--red); margin-top:0;">🗑️ Data Management Tools</h4>
+            
+            <!-- Delete Collections -->
+            <p class="section-title">Delete Collections:</p>
             <select id="delete-target" style="border-color: var(--red); color: var(--red);">
-                <option value="all">Full Reset (Everything)</option>
-                <option value="investors">Investors Only</option>
-                <option value="all_txids">TXID Registry Only</option>
-                <option value="audit_logs">Audit Logs Only</option>
+                <optgroup label="🔥 Full Reset">
+                    <option value="nuclear">🔥 NUCLEAR: Delete EVERYTHING (Including Admins!)</option>
+                    <option value="all">⚠️ Full Reset (All Data, Keep Admins)</option>
+                </optgroup>
+                
+                <optgroup label="📦 Collections">
+                    <option value="investors">👥 All Investors</option>
+                    <option value="all_txids">📋 TXID Registry</option>
+                    <option value="audit_logs">📊 Audit Logs</option>
+                    <option value="admins">👔 All Admin Accounts (Keep Current Owner)</option>
+                    <option value="settings">⚙️ Settings & Prices</option>
+                </optgroup>
+                
+                <optgroup label="🎯 Selective Delete">
+                    <option value="pending_requests">⏳ All Pending Requests</option>
+                    <option value="rejected_requests">❌ All Rejected Requests</option>
+                    <option value="approved_requests">✅ All Approved Requests History</option>
+                    <option value="zero_balance">🗑️ Zero Balance Investors</option>
+                </optgroup>
             </select>
             <button class="clickable btn-rej" style="width:100%; margin-top:10px;" onclick="smartReset()">Execute Delete</button>
+            
+            <!-- Delete Specific Investor -->
+            <hr class="divider">
+            <p class="section-title">Delete Specific Investor:</p>
+            <input type="tel" id="target-investor" placeholder="+962xxxxxxxxx" style="margin-bottom: 8px;">
+            <button class="clickable btn-rej" style="width:100%;" onclick="deleteSpecificInvestor()">Delete This Investor</button>
+            
+            <!-- Maintenance Tools -->
+            <hr class="divider">
+            <p class="section-title">Maintenance Tools:</p>
+            <button class="clickable" style="width:100%; margin-bottom: 8px; border-color: #666; color: #666;" onclick="exportAllData()">📥 Export All Data (Backup)</button>
+            <button class="clickable" style="width:100%; border-color: #666; color: #666;" onclick="cleanDuplicateTxids()">🧹 Clean Duplicate TXIDs</button>
         </div>
 
+        <!-- Pending Requests -->
         <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px;">
             <h3 id="t-pending-title" style="margin:0;">Pending Requests</h3>
             <button class="clickable" onclick="loadReqs(true)" id="t-ref-btn" style="font-size:0.7rem;">Refresh</button>
@@ -100,15 +141,31 @@
 <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
 
 <script>
-    const firebaseConfig = { apiKey: "AIzaSyBVyEPs_xvz9Oryk-jpLev4ja7Sb1P6RaM", authDomain: "sarmad-web.firebaseapp.com", projectId: "sarmad-web", storageBucket: "sarmad-web.firebasestorage.app", messagingSenderId: "687271413195", appId: "1:687271413195:web:f9564027c56ed0efb7e24e" };
+    const firebaseConfig = { 
+        apiKey: "AIzaSyBVyEPs_xvz9Oryk-jpLev4ja7Sb1P6RaM", 
+        authDomain: "sarmad-web.firebaseapp.com", 
+        projectId: "sarmad-web", 
+        storageBucket: "sarmad-web.firebasestorage.app", 
+        messagingSenderId: "687271413195", 
+        appId: "1:687271413195:web:f9564027c56ed0efb7e24e" 
+    };
+    
     firebase.initializeApp(firebaseConfig);
     const auth = firebase.auth();
     const db = firebase.firestore();
 
     let currentLang = 'en', confirmationResult = null;
     const langData = {
-        en: { switcher: 'عربي', logout: 'Logout', login: 'Admin Login', check: 'Verify Account', title: 'Pending Requests', ref: 'Refresh', upd: 'Update', priceTitle: 'Update Token Price', statCoins: 'Global Distributed SRMD', statUsers: 'Total Investors' },
-        ar: { switcher: 'EN', logout: 'خروج', login: 'دخول الإدارة', check: 'تحقق من الحساب', title: 'الطلبات المعلقة', ref: 'تحديث', upd: 'تعديل', priceTitle: 'تعديل سعر العملة', statCoins: 'إجمالي العملات الموزعة', statUsers: 'إجمالي المستثمرين' }
+        en: { 
+            switcher: 'عربي', logout: 'Logout', login: 'Admin Login', check: 'Verify Account', 
+            title: 'Pending Requests', ref: 'Refresh', upd: 'Update', priceTitle: 'Update Token Price', 
+            statCoins: 'Global Distributed SRMD', statUsers: 'Total Investors' 
+        },
+        ar: { 
+            switcher: 'EN', logout: 'خروج', login: 'دخول الإدارة', check: 'تحقق من الحساب', 
+            title: 'الطلبات المعلقة', ref: 'تحديث', upd: 'تعديل', priceTitle: 'تعديل سعر العملة', 
+            statCoins: 'إجمالي العملات الموزعة', statUsers: 'إجمالي المستثمرين' 
+        }
     };
 
     function toggleLang() {
@@ -121,118 +178,572 @@
         document.getElementById('t-check').innerText = langData[currentLang].check;
         document.getElementById('t-stat-coins').innerText = langData[currentLang].statCoins;
         document.getElementById('t-stat-users').innerText = langData[currentLang].statUsers;
+        
+        const priceTitle = document.getElementById('t-price-title');
+        const updBtn = document.getElementById('t-upd-btn');
+        const pendingTitle = document.getElementById('t-pending-title');
+        const refBtn = document.getElementById('t-ref-btn');
+        
+        if(priceTitle) priceTitle.innerText = langData[currentLang].priceTitle;
+        if(updBtn) updBtn.innerText = langData[currentLang].upd;
+        if(pendingTitle) pendingTitle.innerText = langData[currentLang].title;
+        if(refBtn) refBtn.innerText = langData[currentLang].ref;
+    }
+
+    function handleLogout() {
+        if(confirm('Are you sure you want to logout?')) {
+            auth.signOut().then(() => location.reload());
+        }
     }
 
     async function checkAdmin() {
         const p = document.getElementById('admin-phone').value.trim();
-        if(!p) return alert("Enter phone!");
-        const s = await db.collection('admins').doc(p).get();
-        if(s.exists && s.data().active) {
-            window.recaptchaVerifier = new firebase.auth.RecaptchaVerifier('recaptcha-container', {size:'invisible'});
-            auth.signInWithPhoneNumber(p, window.recaptchaVerifier).then(res => {
-                confirmationResult = res;
+        if(!p) return alert("Enter phone number!");
+        
+        try {
+            const s = await db.collection('admins').doc(p).get();
+            if(s.exists && s.data().active) {
+                window.recaptchaVerifier = new firebase.auth.RecaptchaVerifier('recaptcha-container', {size:'invisible'});
+                const result = await auth.signInWithPhoneNumber(p, window.recaptchaVerifier);
+                confirmationResult = result;
                 document.getElementById('otp-area').classList.remove('hidden');
                 document.getElementById('t-check').classList.add('hidden');
-            });
-        } else {
-            alert(currentLang === 'ar' ? "أنت لست مؤهلاً للدخول" : "Not authorized.");
+            } else {
+                alert(currentLang === 'ar' ? "أنت لست مؤهلاً للدخول" : "Not authorized.");
+            }
+        } catch(err) {
+            alert('Error: ' + err.message);
+            console.error(err);
         }
     }
 
     function verifyAdminOTP() {
-        const code = document.getElementById('otp-input').value;
-        confirmationResult.confirm(code).then(() => location.reload()).catch(e => alert("OTP Error"));
+        const code = document.getElementById('otp-input').value.trim();
+        if(!code) return alert('Enter OTP code');
+        confirmationResult.confirm(code)
+            .then(() => location.reload())
+            .catch(e => alert("Invalid OTP code"));
     }
 
     async function addAccountant() {
         const ph = document.getElementById('new-staff-phone').value.trim();
-        if(!ph) return alert("Enter phone");
-        await db.collection('admins').doc(ph).set({ role: 'accountant', active: true });
-        alert("Accountant Added!");
-        document.getElementById('new-staff-phone').value = '';
+        if(!ph || !ph.startsWith('+')) return alert("Enter valid phone number with country code");
+        
+        try {
+            await db.collection('admins').doc(ph).set({ 
+                role: 'accountant', 
+                active: true,
+                created_at: firebase.firestore.FieldValue.serverTimestamp(),
+                created_by: auth.currentUser.phoneNumber
+            });
+            alert("✅ Accountant added successfully!");
+            document.getElementById('new-staff-phone').value = '';
+        } catch(err) {
+            alert('Error: ' + err.message);
+        }
     }
 
     async function updatePrice() {
         const np = document.getElementById('new-price').value;
-        if(!np) return;
-        await db.collection('settings').doc('prices').set({ srmd_price: parseFloat(np), last_update: new Date() }, { merge: true });
-        alert("Price Updated & Structure Created!");
+        if(!np || parseFloat(np) <= 0) return alert('Enter valid price');
+        
+        try {
+            await db.collection('settings').doc('prices').set({ 
+                srmd_price: parseFloat(np), 
+                last_update: firebase.firestore.FieldValue.serverTimestamp(),
+                updated_by: auth.currentUser.phoneNumber
+            }, { merge: true });
+            
+            alert("✅ Price updated successfully!");
+        } catch(err) {
+            alert('Error: ' + err.message);
+        }
     }
+
+    // ==========================================
+    // Delete Functions
+    // ==========================================
 
     async function smartReset() {
         const target = document.getElementById('delete-target').value;
         const targetName = document.getElementById('delete-target').options[document.getElementById('delete-target').selectedIndex].text;
-        if(!confirm(`WARNING: Are you sure you want to delete [ ${targetName} ]?`)) return;
         
-        let cols = (target === 'all') ? ['investors', 'all_txids', 'audit_logs'] : [target];
-        for (const col of cols) {
-            const snap = await db.collection(col).get();
-            const batch = db.batch();
-            snap.forEach(doc => batch.delete(doc.ref));
-            await batch.commit();
+        // First confirmation
+        if(!confirm(`⚠️ WARNING: You are about to delete:\n\n${targetName}\n\nThis action CANNOT be undone!\n\nContinue?`)) {
+            return;
         }
-        alert("Done.");
-        location.reload();
+        
+        // Extra confirmation for Nuclear option
+        if(target === 'nuclear') {
+            const typed = prompt('🔥 FINAL WARNING!\n\nThis will delete EVERYTHING including ALL admin accounts!\n\nType "DELETE EVERYTHING" to confirm:');
+            if(typed !== 'DELETE EVERYTHING') {
+                alert('Operation cancelled.');
+                return;
+            }
+        }
+        
+        try {
+            let collections = [];
+            
+            switch(target) {
+                case 'nuclear':
+                    collections = ['investors', 'all_txids', 'audit_logs', 'admins', 'settings'];
+                    break;
+                    
+                case 'all':
+                    collections = ['investors', 'all_txids', 'audit_logs', 'settings'];
+                    break;
+                    
+                case 'investors':
+                    collections = ['investors'];
+                    break;
+                    
+                case 'all_txids':
+                    collections = ['all_txids'];
+                    break;
+                    
+                case 'audit_logs':
+                    collections = ['audit_logs'];
+                    break;
+                    
+                case 'admins':
+                    await deleteAdminsExceptOwner();
+                    alert('✅ All admins deleted except current owner!');
+                    return;
+                    
+                case 'settings':
+                    collections = ['settings'];
+                    break;
+                    
+                case 'pending_requests':
+                    await deleteRequestsByStatus('pending');
+                    alert('✅ All pending requests deleted!');
+                    loadReqs();
+                    return;
+                    
+                case 'rejected_requests':
+                    await deleteRequestsByStatus('rejected');
+                    alert('✅ All rejected requests deleted!');
+                    loadReqs();
+                    return;
+                    
+                case 'approved_requests':
+                    await deleteRequestsByStatus('approved');
+                    alert('✅ All approved requests history deleted!');
+                    loadReqs();
+                    return;
+                    
+                case 'zero_balance':
+                    await deleteZeroBalanceInvestors();
+                    alert('✅ Zero balance investors deleted!');
+                    loadReqs();
+                    return;
+            }
+            
+            // Execute collection deletions
+            for (const col of collections) {
+                await deleteCollection(col);
+            }
+            
+            // Log to audit (if not deleted)
+            if(!collections.includes('audit_logs')) {
+                await db.collection('audit_logs').add({
+                    action: 'mass_delete',
+                    target: target,
+                    collections: collections,
+                    by: auth.currentUser.phoneNumber,
+                    time: firebase.firestore.FieldValue.serverTimestamp()
+                });
+            }
+            
+            alert(`✅ Successfully deleted: ${targetName}`);
+            
+            if(!collections.includes('admins')) {
+                location.reload();
+            } else {
+                alert('System reset complete. Please re-register admin accounts.');
+                await auth.signOut();
+                location.reload();
+            }
+            
+        } catch(err) {
+            alert('Error during deletion: ' + err.message);
+            console.error(err);
+        }
     }
 
-    auth.onAuthStateChanged(async u => { 
-        if(u) {
-            document.getElementById('auth-ui').classList.add('hidden');
-            document.getElementById('dashboard').classList.remove('hidden');
-            const d = (await db.collection('admins').doc(u.phoneNumber).get()).data();
-            if(d && d.role === 'owner') {
-                document.getElementById('price-card').classList.remove('hidden');
-                document.getElementById('staff-card').classList.remove('hidden');
-                document.getElementById('owner-tools').classList.remove('hidden');
+    async function deleteCollection(collectionName) {
+        const snap = await db.collection(collectionName).get();
+        const batchSize = 500;
+        let batch = db.batch();
+        let count = 0;
+        
+        for(const doc of snap.docs) {
+            batch.delete(doc.ref);
+            count++;
+            
+            if(count >= batchSize) {
+                await batch.commit();
+                batch = db.batch();
+                count = 0;
             }
-            db.collection('investors').onSnapshot(snap => {
-                let total = 0;
-                document.getElementById('admin-global-users').innerText = snap.size;
-                snap.forEach(doc => { total += (doc.data().balance || 0); });
-                document.getElementById('admin-global-coins').innerText = total.toLocaleString();
-            });
-            loadReqs();
         }
-    });
+        
+        if(count > 0) {
+            await batch.commit();
+        }
+    }
 
-    function loadReqs() {
-        db.collection('investors').onSnapshot(snap => {
-            const list = document.getElementById('pending-list'); list.innerHTML = '';
+    async function deleteAdminsExceptOwner() {
+        const currentPhone = auth.currentUser.phoneNumber;
+        const snap = await db.collection('admins').get();
+        const batch = db.batch();
+        
+        snap.forEach(doc => {
+            if(doc.id !== currentPhone) {
+                batch.delete(doc.ref);
+            }
+        });
+        
+        await batch.commit();
+    }
+
+    async function deleteRequestsByStatus(status) {
+        const snap = await db.collection('investors').get();
+        const batch = db.batch();
+        
+        snap.forEach(doc => {
+            const data = doc.data();
+            const requests = data.requests || [];
+            const cleanedRequests = requests.filter(r => r.status !== status);
+            
+            if(cleanedRequests.length !== requests.length) {
+                batch.update(doc.ref, { requests: cleanedRequests });
+            }
+        });
+        
+        await batch.commit();
+    }
+
+    async function deleteZeroBalanceInvestors() {
+        const snap = await db.collection('investors').get();
+        const batch = db.batch();
+        
+        snap.forEach(doc => {
+            const balance = doc.data().balance || 0;
+            if(balance === 0) {
+                batch.delete(doc.ref);
+            }
+        });
+        
+        await batch.commit();
+    }
+
+    async function deleteSpecificInvestor() {
+        const phone = document.getElementById('target-investor').value.trim();
+        
+        if(!phone) {
+            alert('Enter investor phone number!');
+            return;
+        }
+        
+        try {
+            const doc = await db.collection('investors').doc(phone).get();
+            
+            if(!doc.exists) {
+                alert('❌ Investor not found!');
+                return;
+            }
+            
+            const data = doc.data();
+            const balance = data.balance || 0;
+            const requestsCount = (data.requests || []).length;
+            
+            if(!confirm(`Delete investor ${phone}?\n\nBalance: ${balance} SRMD\nRequests: ${requestsCount}\n\nThis cannot be undone!`)) {
+                return;
+            }
+            
+            await db.collection('investors').doc(phone).delete();
+            
+            // Log to audit
+            await db.collection('audit_logs').add({
+                action: 'delete_investor',
+                investor: phone,
+                balance_lost: balance,
+                requests_count: requestsCount,
+                by: auth.currentUser.phoneNumber,
+                time: firebase.firestore.FieldValue.serverTimestamp()
+            });
+            
+            alert(`✅ Investor ${phone} deleted successfully!`);
+            document.getElementById('target-investor').value = '';
+            loadReqs();
+            
+        } catch(err) {
+            alert('Error: ' + err.message);
+            console.error(err);
+        }
+    }
+
+    async function exportAllData() {
+        if(!confirm('This will download all data as JSON backup.\n\nContinue?')) return;
+        
+        try {
+            const data = {};
+            const collections = ['investors', 'admins', 'settings', 'audit_logs', 'all_txids'];
+            
+            for(const col of collections) {
+                const snap = await db.collection(col).get();
+                data[col] = [];
+                snap.forEach(doc => {
+                    data[col].push({ id: doc.id, ...doc.data() });
+                });
+            }
+            
+            // Convert to JSON and download
+            const json = JSON.stringify(data, null, 2);
+            const blob = new Blob([json], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `sarmad_backup_${new Date().toISOString().split('T')[0]}.json`;
+            a.click();
+            URL.revokeObjectURL(url);
+            
+            alert('✅ Backup downloaded successfully!');
+            
+        } catch(err) {
+            alert('Error: ' + err.message);
+            console.error(err);
+        }
+    }
+
+    async function cleanDuplicateTxids() {
+        if(!confirm('This will scan all investors and reject duplicate TXIDs.\n\nContinue?')) return;
+        
+        try {
+            const snap = await db.collection('investors').get();
+            const allTxids = new Set();
+            const duplicates = [];
+            
             snap.forEach(doc => {
-                (doc.data().requests || []).forEach((req, idx) => {
-                    if(req.status === 'pending') {
-                        list.innerHTML += `<div class="card"><p>Investor: ${doc.id}</p><span class="txid-box" onclick="copyVal('${req.txid}')">${req.txid}</span>
-                        <input type="number" id="amt-${doc.id}-${idx}" placeholder="SRMD Amount"><button class="clickable" onclick="approveTx('${doc.id}', ${idx})">Approve ✅</button>
-                        <button class="clickable btn-rej" onclick="rejectTx('${doc.id}', ${idx})">Reject ❌</button></div>`;
+                const requests = doc.data().requests || [];
+                requests.forEach((req, idx) => {
+                    if(allTxids.has(req.txid)) {
+                        duplicates.push({ phone: doc.id, index: idx, txid: req.txid });
+                    } else {
+                        allTxids.add(req.txid);
                     }
                 });
             });
+            
+            if(duplicates.length === 0) {
+                alert('✅ No duplicates found!');
+                return;
+            }
+            
+            if(!confirm(`Found ${duplicates.length} duplicate TXIDs.\n\nThey will be marked as rejected. Continue?`)) {
+                return;
+            }
+            
+            // Process duplicates
+            const batch = db.batch();
+            for(const dup of duplicates) {
+                const docRef = db.collection('investors').doc(dup.phone);
+                const docSnap = await docRef.get();
+                let requests = docSnap.data().requests;
+                requests[dup.index].status = 'rejected';
+                requests[dup.index].reasonCode = 'used_txid';
+                batch.update(docRef, { requests });
+            }
+            
+            await batch.commit();
+            alert(`✅ Cleaned ${duplicates.length} duplicate TXIDs!`);
+            loadReqs();
+            
+        } catch(err) {
+            alert('Error: ' + err.message);
+            console.error(err);
+        }
+    }
+
+    // ==========================================
+    // Main Functions
+    // ==========================================
+
+    auth.onAuthStateChanged(async u => { 
+        if(u) {
+            try {
+                document.getElementById('auth-ui').classList.add('hidden');
+                document.getElementById('dashboard').classList.remove('hidden');
+                
+                const adminDoc = await db.collection('admins').doc(u.phoneNumber).get();
+                
+                if(!adminDoc.exists || !adminDoc.data().active) {
+                    alert('Access denied or account inactive');
+                    await auth.signOut();
+                    return;
+                }
+                
+                const d = adminDoc.data();
+                
+                // Show owner-only features
+                if(d && d.role === 'owner') {
+                    document.getElementById('price-card').classList.remove('hidden');
+                    document.getElementById('staff-card').classList.remove('hidden');
+                    document.getElementById('owner-tools').classList.remove('hidden');
+                }
+                
+                // Listen to stats
+                db.collection('investors').onSnapshot(snap => {
+                    let total = 0;
+                    document.getElementById('admin-global-users').innerText = snap.size;
+                    snap.forEach(doc => { 
+                        total += (doc.data().balance || 0); 
+                    });
+                    document.getElementById('admin-global-coins').innerText = total.toLocaleString();
+                });
+                
+                loadReqs();
+                
+            } catch(err) {
+                console.error('Auth error:', err);
+                alert('Error loading dashboard');
+                await auth.signOut();
+            }
+        }
+    });
+
+    function loadReqs(manual = false) {
+        db.collection('investors').onSnapshot(snap => {
+            const list = document.getElementById('pending-list'); 
+            list.innerHTML = '';
+            let hasPending = false;
+            
+            snap.forEach(doc => {
+                (doc.data().requests || []).forEach((req, idx) => {
+                    if(req.status === 'pending') {
+                        hasPending = true;
+                        const safePhone = doc.id.replace(/[^0-9+]/g, '');
+                        const safeTxid = (req.txid || '').substring(0, 100);
+                        
+                        list.innerHTML += `
+                        <div class="card">
+                            <p style="font-size:0.8rem; color:var(--grey); margin-top:0;">Investor: ${safePhone}</p>
+                            <span class="txid-box" onclick="copyVal('${safeTxid}')" title="${safeTxid}">${safeTxid}</span>
+                            <input type="number" id="amt-${doc.id}-${idx}" placeholder="SRMD Amount" min="0" step="0.01" style="margin-bottom:8px;">
+                            <div style="display:flex; gap:8px;">
+                                <button class="clickable" style="flex:1;" onclick="approveTx('${safePhone}', ${idx})">Approve ✅</button>
+                                <button class="clickable btn-rej" style="flex:1;" onclick="rejectTx('${safePhone}', ${idx})">Reject ❌</button>
+                            </div>
+                        </div>`;
+                    }
+                });
+            });
+            
+            if(!hasPending) {
+                list.innerHTML = '<p style="color:var(--grey); text-align:center; padding:20px;">No pending requests.</p>';
+            }
         });
     }
 
-    function copyVal(v) { navigator.clipboard.writeText(v).then(() => alert("Copied!")); }
+    function copyVal(v) { 
+        navigator.clipboard.writeText(v)
+            .then(() => alert("✅ Copied!"))
+            .catch(err => console.error('Copy failed:', err));
+    }
 
     async function approveTx(ph, idx) {
         const amt = document.getElementById(`amt-${ph}-${idx}`).value;
-        if(!amt) return alert("Enter amount");
-        const ref = db.collection('investors').doc(ph);
-        await db.runTransaction(async (t) => {
-            const s = await t.get(ref);
-            let rs = s.data().requests;
-            rs[idx].status = 'approved';
-            t.update(ref, { balance: (s.data().balance || 0) + parseFloat(amt), requests: rs });
-            db.collection('audit_logs').add({ action: 'approve', investor: ph, amount: amt, by: auth.currentUser.phoneNumber, time: firebase.firestore.FieldValue.serverTimestamp() });
-        });
-        alert('Approved!');
+        if(!amt || parseFloat(amt) <= 0) return alert("Enter valid amount!");
+        
+        if(!confirm(`Approve ${amt} SRMD for ${ph}?`)) return;
+        
+        try {
+            const ref = db.collection('investors').doc(ph);
+            
+            await db.runTransaction(async (t) => {
+                const s = await t.get(ref);
+                
+                if(!s.exists) throw new Error('Investor not found');
+                
+                let rs = s.data().requests || [];
+                
+                if(!rs[idx] || rs[idx].status !== 'pending') {
+                    throw new Error('Request already processed');
+                }
+                
+                rs[idx].status = 'approved';
+                rs[idx].approved_at = firebase.firestore.FieldValue.serverTimestamp();
+                rs[idx].approved_by = auth.currentUser.phoneNumber;
+                rs[idx].amount = parseFloat(amt);
+                
+                t.update(ref, { 
+                    balance: (s.data().balance || 0) + parseFloat(amt), 
+                    requests: rs,
+                    last_updated: firebase.firestore.FieldValue.serverTimestamp()
+                });
+                
+                // Log inside transaction
+                const logRef = db.collection('audit_logs').doc();
+                t.set(logRef, { 
+                    action: 'approve', 
+                    investor: ph, 
+                    amount: parseFloat(amt),
+                    txid: rs[idx].txid,
+                    by: auth.currentUser.phoneNumber, 
+                    time: firebase.firestore.FieldValue.serverTimestamp() 
+                });
+            });
+            
+            alert('✅ Approved successfully!');
+            
+        } catch(err) {
+            alert('Error: ' + err.message);
+            console.error(err);
+        }
     }
 
     async function rejectTx(ph, idx) {
-        const ref = db.collection('investors').doc(ph);
-        const s = await ref.get(); let rs = s.data().requests;
-        rs[idx].status = 'rejected';
-        await ref.update({ requests: rs });
-        db.collection('audit_logs').add({ action: 'reject', investor: ph, by: auth.currentUser.phoneNumber, time: firebase.firestore.FieldValue.serverTimestamp() });
-        alert('Rejected!');
+        if(!confirm('Reject this request?')) return;
+        
+        try {
+            const ref = db.collection('investors').doc(ph);
+            const s = await ref.get();
+            
+            if(!s.exists) throw new Error('Investor not found');
+            
+            let rs = s.data().requests || [];
+            
+            if(!rs[idx] || rs[idx].status !== 'pending') {
+                alert('Request already processed');
+                return;
+            }
+            
+            rs[idx].status = 'rejected';
+            rs[idx].rejected_at = firebase.firestore.FieldValue.serverTimestamp();
+            rs[idx].rejected_by = auth.currentUser.phoneNumber;
+            
+            await ref.update({ 
+                requests: rs,
+                last_updated: firebase.firestore.FieldValue.serverTimestamp()
+            });
+            
+            // Log rejection
+            await db.collection('audit_logs').add({ 
+                action: 'reject', 
+                investor: ph,
+                txid: rs[idx].txid,
+                by: auth.currentUser.phoneNumber, 
+                time: firebase.firestore.FieldValue.serverTimestamp() 
+            });
+            
+            alert('❌ Rejected successfully!');
+            
+        } catch(err) {
+            alert('Error: ' + err.message);
+            console.error(err);
+        }
     }
 </script>
 </body>
