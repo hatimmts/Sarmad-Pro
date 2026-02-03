@@ -77,8 +77,14 @@
         </div>
 
         <div id="owner-tools" class="card hidden" style="border: 2px solid var(--red);">
-            <h4 style="color:var(--red); margin-top:0;">Owner Safety Tools ⚠️</h4>
-            <button class="clickable btn-rej" onclick="fullReset()">Full Database Reset</button>
+            <h4 style="color:var(--red); margin-top:0;">Cleaning Tools ⚠️</h4>
+            <select id="delete-target" style="border-color: var(--red); color: var(--red);">
+                <option value="all">Full Reset (Everything)</option>
+                <option value="investors">Investors Only</option>
+                <option value="all_txids">TXID Registry Only</option>
+                <option value="audit_logs">Audit Logs Only</option>
+            </select>
+            <button class="clickable btn-rej" style="width:100%; margin-top:10px;" onclick="smartReset()">Execute Delete</button>
         </div>
 
         <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px;">
@@ -129,13 +135,13 @@
                 document.getElementById('t-check').classList.add('hidden');
             });
         } else {
-            alert(currentLang === 'ar' ? "أنت لست مؤهلاً للدخول" : "You are not authorized to enter.");
+            alert(currentLang === 'ar' ? "أنت لست مؤهلاً للدخول" : "Not authorized.");
         }
     }
 
     function verifyAdminOTP() {
         const code = document.getElementById('otp-input').value;
-        confirmationResult.confirm(code).then(() => location.reload()).catch(e => alert("Invalid OTP"));
+        confirmationResult.confirm(code).then(() => location.reload()).catch(e => alert("OTP Error"));
     }
 
     async function addAccountant() {
@@ -149,20 +155,23 @@
     async function updatePrice() {
         const np = document.getElementById('new-price').value;
         if(!np) return;
-        await db.collection('settings').doc('prices').set({ srmd_price: parseFloat(np) }, { merge: true });
-        alert("Price Updated!");
+        await db.collection('settings').doc('prices').set({ srmd_price: parseFloat(np), last_update: new Date() }, { merge: true });
+        alert("Price Updated & Structure Created!");
     }
 
-    async function fullReset() {
-        if(!confirm("Wipe everything?")) return;
-        const cols = ['investors', 'all_txids', 'audit_logs'];
+    async function smartReset() {
+        const target = document.getElementById('delete-target').value;
+        const targetName = document.getElementById('delete-target').options[document.getElementById('delete-target').selectedIndex].text;
+        if(!confirm(`WARNING: Are you sure you want to delete [ ${targetName} ]?`)) return;
+        
+        let cols = (target === 'all') ? ['investors', 'all_txids', 'audit_logs'] : [target];
         for (const col of cols) {
             const snap = await db.collection(col).get();
             const batch = db.batch();
             snap.forEach(doc => batch.delete(doc.ref));
             await batch.commit();
         }
-        alert("System Reset.");
+        alert("Done.");
         location.reload();
     }
 
@@ -192,9 +201,9 @@
             snap.forEach(doc => {
                 (doc.data().requests || []).forEach((req, idx) => {
                     if(req.status === 'pending') {
-                        list.innerHTML += `<div class="card"><p>${doc.id}</p><span class="txid-box" onclick="copyVal('${req.txid}')">${req.txid}</span>
-                        <input type="number" id="amt-${doc.id}-${idx}" placeholder="Amount"><button class="clickable" onclick="approveTx('${doc.id}', ${idx})">Approve</button>
-                        <button class="clickable btn-rej" onclick="rejectTx('${doc.id}', ${idx})">Reject</button></div>`;
+                        list.innerHTML += `<div class="card"><p>Investor: ${doc.id}</p><span class="txid-box" onclick="copyVal('${req.txid}')">${req.txid}</span>
+                        <input type="number" id="amt-${doc.id}-${idx}" placeholder="SRMD Amount"><button class="clickable" onclick="approveTx('${doc.id}', ${idx})">Approve ✅</button>
+                        <button class="clickable btn-rej" onclick="rejectTx('${doc.id}', ${idx})">Reject ❌</button></div>`;
                     }
                 });
             });
@@ -205,12 +214,14 @@
 
     async function approveTx(ph, idx) {
         const amt = document.getElementById(`amt-${ph}-${idx}`).value;
+        if(!amt) return alert("Enter amount");
         const ref = db.collection('investors').doc(ph);
         await db.runTransaction(async (t) => {
             const s = await t.get(ref);
             let rs = s.data().requests;
             rs[idx].status = 'approved';
             t.update(ref, { balance: (s.data().balance || 0) + parseFloat(amt), requests: rs });
+            db.collection('audit_logs').add({ action: 'approve', investor: ph, amount: amt, by: auth.currentUser.phoneNumber, time: firebase.firestore.FieldValue.serverTimestamp() });
         });
         alert('Approved!');
     }
@@ -220,6 +231,7 @@
         const s = await ref.get(); let rs = s.data().requests;
         rs[idx].status = 'rejected';
         await ref.update({ requests: rs });
+        db.collection('audit_logs').add({ action: 'reject', investor: ph, by: auth.currentUser.phoneNumber, time: firebase.firestore.FieldValue.serverTimestamp() });
         alert('Rejected!');
     }
 </script>
