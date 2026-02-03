@@ -1,92 +1,119 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Sarmad Admin</title>
+
+<style>
+:root { --green:#00ff88; --bg:#000; }
+body { background:var(--bg); color:#fff; font-family:sans-serif; margin:0; padding:15px; }
+.card { background:#0a0a0a; border:1px solid #222; padding:20px; border-radius:15px; margin-bottom:15px; }
+input { width:100%; padding:10px; margin:10px 0; background:#000; border:1px solid #333; color:#fff; border-radius:5px; }
+button { width:100%; padding:12px; border:none; border-radius:8px; font-weight:bold; cursor:pointer; }
+.go { background:var(--green); color:#000; }
+.rej { background:#ff4444; color:#fff; }
+.tx { background:#111; color:var(--green); padding:8px; border:1px dashed var(--green); border-radius:5px; text-align:center; }
+.hidden { display:none; }
+</style>
+</head>
+
+<body>
+
+<div id="auth" class="card" style="max-width:400px;margin:auto;">
+  <h3 style="color:var(--green);text-align:center;">دخول الإدارة</h3>
+  <input id="phone" placeholder="+962xxxxxxxxx">
+  <div id="recaptcha"></div>
+  <button class="go" onclick="sendOTP()">إرسال الرمز</button>
+  <input id="otp" placeholder="OTP" class="hidden">
+  <button class="go hidden" id="verifyBtn" onclick="verifyOTP()">دخول</button>
+</div>
+
+<div id="panel" class="hidden">
+  <h3 style="color:var(--green)">طلبات الشراء</h3>
+  <div id="list"></div>
+  <button onclick="auth.signOut()">تسجيل خروج</button>
+</div>
+
+<script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
+
 <script>
-firebase.initializeApp(firebaseConfig);
+firebase.initializeApp({
+  apiKey: "AIzaSyBVyEPs_xvz9Oryk-jpLev4ja7Sb1P6RaM",
+  authDomain: "sarmad-web.firebaseapp.com",
+  projectId: "sarmad-web"
+});
+
 const auth = firebase.auth();
 const db = firebase.firestore();
 
-auth.onAuthStateChanged(async user => {
-  if (!user) return;
+function sendOTP(){
+  window.recaptchaVerifier = new firebase.auth.RecaptchaVerifier('recaptcha',{size:'invisible'});
+  auth.signInWithPhoneNumber(phone.value,recaptchaVerifier).then(r=>{
+    window.confirmationResult=r;
+    otp.classList.remove('hidden');
+    verifyBtn.classList.remove('hidden');
+  });
+}
 
-  const adminSnap = await db.collection('admins').doc(user.phoneNumber).get();
-  if (!adminSnap.exists) return alert('غير مصرح');
+function verifyOTP(){
+  confirmationResult.confirm(otp.value).then(()=>location.reload());
+}
 
-  initRequests();
+auth.onAuthStateChanged(async user=>{
+  if(!user) return;
+  const admin = await db.collection('admins').doc(user.phoneNumber).get();
+  if(!admin.exists) return alert('غير مصرح');
+  auth.classList.add('hidden');
+  panel.classList.remove('hidden');
+  loadRequests();
 });
 
-function initRequests() {
-  db.collection('purchase_requests')
-    .where('status','==','pending')
-    .onSnapshot(snap => {
-      const list = document.getElementById('pending-list');
-      list.innerHTML = '';
-      snap.forEach(doc => {
-        const r = doc.data();
-        list.innerHTML += `
-          <div class="card">
-            <small>${r.investorPhone}</small>
-            <span class="txid-box">${r.txid}</span>
-            <input id="amt-${doc.id}" type="number" placeholder="المبلغ">
-            <button class="btn btn-go" onclick="approve('${doc.id}')">اعتماد</button>
-            <button class="btn btn-rej" onclick="reject('${doc.id}')">رفض</button>
-          </div>
-        `;
-      });
-    });
-}
-
-async function approve(id) {
-  const amt = parseFloat(document.getElementById(`amt-${id}`).value);
-  if (!amt) return alert('أدخل المبلغ');
-
-  const reqRef = db.collection('purchase_requests').doc(id);
-
-  await db.runTransaction(async t => {
-    const reqSnap = await t.get(reqRef);
-    if (reqSnap.data().status !== 'pending') throw 'تمت المعالجة سابقًا';
-
-    const invRef = db.collection('investors').doc(reqSnap.data().investorPhone);
-    const invSnap = await t.get(invRef);
-
-    t.update(invRef, {
-      balance: (invSnap.data().balance || 0) + amt
-    });
-
-    t.update(reqRef, {
-      status: 'approved',
-      approvedBy: auth.currentUser.phoneNumber,
-      approvedAt: firebase.firestore.FieldValue.serverTimestamp()
-    });
-
-    t.set(db.collection('audit_logs').doc(), {
-      action: 'approve',
-      requestId: id,
-      amount: amt,
-      by: auth.currentUser.phoneNumber,
-      time: firebase.firestore.FieldValue.serverTimestamp()
+function loadRequests(){
+  db.collection('purchase_requests').where('status','==','pending')
+  .onSnapshot(s=>{
+    list.innerHTML='';
+    s.forEach(d=>{
+      const r=d.data();
+      list.innerHTML+=`
+      <div class="card">
+        <small>${r.investorPhone}</small>
+        <div class="tx">${r.txid}</div>
+        <input id="amt-${d.id}" placeholder="المبلغ">
+        <button class="go" onclick="approve('${d.id}')">اعتماد</button>
+        <button class="rej" onclick="reject('${d.id}')">رفض</button>
+      </div>`;
     });
   });
-
-  alert('تم الاعتماد');
 }
 
-async function reject(id) {
-  const reason = prompt('سبب الرفض');
-  if (!reason) return;
+async function approve(id){
+  const amt=parseFloat(document.getElementById(`amt-${id}`).value);
+  if(!amt) return;
+  const ref=db.collection('purchase_requests').doc(id);
 
+  await db.runTransaction(async t=>{
+    const r=await t.get(ref);
+    const inv=db.collection('investors').doc(r.data().investorPhone);
+    const i=await t.get(inv);
+
+    t.update(inv,{balance:(i.data().balance||0)+amt});
+    t.update(ref,{status:'approved',approvedBy:auth.currentUser.phoneNumber});
+    t.set(db.collection('audit_logs').doc(),{
+      action:'approve',request:id,amount:amt,by:auth.currentUser.phoneNumber
+    });
+  });
+}
+
+async function reject(id){
+  const reason=prompt('سبب الرفض');
+  if(!reason) return;
   await db.collection('purchase_requests').doc(id).update({
-    status: 'rejected',
-    reason,
-    rejectedBy: auth.currentUser.phoneNumber,
-    rejectedAt: firebase.firestore.FieldValue.serverTimestamp()
+    status:'rejected',reason
   });
-
-  await db.collection('audit_logs').add({
-    action: 'reject',
-    requestId: id,
-    reason,
-    by: auth.currentUser.phoneNumber,
-    time: firebase.firestore.FieldValue.serverTimestamp()
-  });
-
-  alert('تم الرفض');
 }
 </script>
+</body>
+</html>
