@@ -9,27 +9,20 @@
         :root { --gold: #d4af37; --bg: #000; --white: #fff; --grey: #888; --red: #ff4444; }
         body { background: var(--bg); color: var(--white); font-family: sans-serif; margin: 0; padding: 15px; }
         .ar-mode { font-family: 'Tajawal', sans-serif; }
-        
         header { background: #000; padding: 20px 15px; border-bottom: 2px solid var(--gold); margin-bottom: 20px; }
         .logo-container { text-align: center; margin-bottom: 10px; }
         .logo { font-family: 'Orbitron', sans-serif; font-size: 1.5rem; color: var(--white); letter-spacing: 2px; }
         .sub-header { display: flex; justify-content: space-between; align-items: center; max-width: 500px; margin: 0 auto; }
-        
         .card { background: #0a0a0a; border: 1px solid #222; padding: 20px; border-radius: 15px; margin-bottom: 20px; text-align: center; }
         .clickable { color: var(--gold); border: 1px solid var(--gold); background: none; padding: 8px 15px; border-radius: 8px; cursor: pointer; font-weight: bold; transition: 0.2s; }
         .clickable:disabled { color: var(--grey); border-color: var(--grey); cursor: not-allowed; opacity: 0.6; }
         .btn-rej { color: var(--red) !important; border-color: var(--red) !important; }
-
-        /* عدادات الإدارة العامة */
         .stats-grid { display: flex; justify-content: space-around; margin-bottom: 10px; }
         .stat-box { flex: 1; }
         .stat-label { font-size: 0.65rem; color: var(--grey); text-transform: uppercase; display: block; margin-bottom: 5px; }
         .stat-val { font-size: 1.2rem; font-weight: bold; color: var(--gold); font-family: 'Orbitron', sans-serif; }
-
         input, select { background: #111; border: 1px solid #333; color: #fff; padding: 12px; width: 100%; border-radius: 8px; box-sizing: border-box; text-align: center; margin-bottom: 10px; font-family: inherit; }
         .txid-box { background: #111; color: var(--gold); padding: 12px; border-radius: 8px; font-family: monospace; cursor: pointer; border: 1px dashed var(--gold); display: block; margin: 10px 0; word-break: break-all; }
-        
-        .action-group { display: flex; flex-direction: column; gap: 8px; margin-top: 10px; }
         .hidden { display: none; }
     </style>
 </head>
@@ -49,10 +42,13 @@
         <input type="tel" id="admin-phone" placeholder="+962xxxxxxxxx">
         <div id="recaptcha-container"></div>
         <button class="clickable" style="width:100%" onclick="checkAdmin()" id="t-check">Verify Account</button>
+        <div id="otp-area" class="hidden">
+            <input type="text" id="otp-input" placeholder="OTP Code">
+            <button class="clickable" style="width:100%" onclick="verifyAdminOTP()" id="t-verify-otp">Login</button>
+        </div>
     </div>
 
     <div id="dashboard" class="hidden">
-        
         <div class="card" style="border-color: var(--gold);">
             <div class="stats-grid">
                 <div class="stat-box">
@@ -66,12 +62,23 @@
             </div>
         </div>
 
+        <div id="staff-card" class="card hidden" style="border: 1px solid var(--gold);">
+            <h4 style="color:var(--gold); margin:0 0 10px 0;">Add New Accountant</h4>
+            <input type="tel" id="new-staff-phone" placeholder="+962xxxxxxxxx">
+            <button class="clickable" onclick="addAccountant()">Add Accountant</button>
+        </div>
+
         <div id="price-card" class="card hidden" style="border: 1px solid var(--gold);">
             <h4 id="t-price-title" style="color:var(--gold); margin:0 0 10px 0;">Update Token Price</h4>
             <div style="display:flex; gap:10px;">
                 <input type="number" id="new-price" step="0.01" placeholder="0.50" style="margin:0;">
                 <button class="clickable" onclick="updatePrice()" id="t-upd-btn">Update</button>
             </div>
+        </div>
+
+        <div id="owner-tools" class="card hidden" style="border: 2px solid var(--red);">
+            <h4 style="color:var(--red); margin-top:0;">Owner Safety Tools ⚠️</h4>
+            <button class="clickable btn-rej" onclick="fullReset()">Full Database Reset</button>
         </div>
 
         <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px;">
@@ -92,136 +99,127 @@
     const auth = firebase.auth();
     const db = firebase.firestore();
 
-    let currentLang = 'en';
+    let currentLang = 'en', confirmationResult = null;
     const langData = {
-        en: { switcher: 'عربي', logout: 'Logout', login: 'Admin Login', check: 'Verify Account', title: 'Pending Requests', ref: 'Refresh', upd: 'Update', priceTitle: 'Update Token Price', amt: 'Amount to add', rPrompt: 'Select rejection reason...', r1: 'Invalid TXID', r2: 'Used TXID', r3: 'Amount Error', r4: 'Wrong Network', statCoins: 'Global Distributed SRMD', statUsers: 'Total Investors' },
-        ar: { switcher: 'EN', logout: 'خروج', login: 'دخول الإدارة', check: 'تحقق من الحساب', title: 'الطلبات المعلقة', ref: 'تحديث', upd: 'تعديل', priceTitle: 'تعديل سعر العملة', amt: 'المبلغ المراد إضافته', rPrompt: 'اختر سبب الرفض...', r1: 'رقم غير صحيح', r2: 'مستخدم سابقاً', r3: 'خطأ بالمبلغ', r4: 'شبكة خاطئة', statCoins: 'إجمالي العملات الموزعة', statUsers: 'إجمالي المستثمرين' }
+        en: { switcher: 'عربي', logout: 'Logout', login: 'Admin Login', check: 'Verify Account', title: 'Pending Requests', ref: 'Refresh', upd: 'Update', priceTitle: 'Update Token Price', statCoins: 'Global Distributed SRMD', statUsers: 'Total Investors' },
+        ar: { switcher: 'EN', logout: 'خروج', login: 'دخول الإدارة', check: 'تحقق من الحساب', title: 'الطلبات المعلقة', ref: 'تحديث', upd: 'تعديل', priceTitle: 'تعديل سعر العملة', statCoins: 'إجمالي العملات الموزعة', statUsers: 'إجمالي المستثمرين' }
     };
-
-    function startCooldown(id, text) {
-        const b = document.getElementById(id); b.disabled = true; let c = 10;
-        const i = setInterval(() => { b.innerText = c + "s"; c--; if(c<0){ clearInterval(i); b.disabled = false; b.innerText = text; } }, 1000);
-    }
 
     function toggleLang() {
         currentLang = currentLang === 'en' ? 'ar' : 'en';
         document.getElementById('admin-html').dir = currentLang === 'ar' ? 'rtl' : 'ltr';
-        document.getElementById('body-tag').className = currentLang === 'ar' ? 'ar-mode' : 'en-mode';
-        
+        document.getElementById('body-tag').className = currentLang === 'ar' ? 'ar-mode' : '';
         document.getElementById('lang-switcher').innerText = langData[currentLang].switcher;
         document.getElementById('logout-btn').innerText = langData[currentLang].logout;
         document.getElementById('t-login').innerText = langData[currentLang].login;
         document.getElementById('t-check').innerText = langData[currentLang].check;
-        document.getElementById('t-title').innerText = langData[currentLang].title;
-        document.getElementById('t-ref-btn').innerText = langData[currentLang].ref;
-        document.getElementById('t-upd-btn').innerText = langData[currentLang].upd;
-        document.getElementById('t-price-title').innerText = langData[currentLang].priceTitle;
         document.getElementById('t-stat-coins').innerText = langData[currentLang].statCoins;
         document.getElementById('t-stat-users').innerText = langData[currentLang].statUsers;
-        loadReqs();
     }
 
     async function checkAdmin() {
-        const p = document.getElementById('admin-phone').value; if(!p) return;
+        const p = document.getElementById('admin-phone').value.trim();
+        if(!p) return alert("Enter phone!");
         const s = await db.collection('admins').doc(p).get();
         if(s.exists && s.data().active) {
             window.recaptchaVerifier = new firebase.auth.RecaptchaVerifier('recaptcha-container', {size:'invisible'});
             auth.signInWithPhoneNumber(p, window.recaptchaVerifier).then(res => {
-                const otp = prompt("Enter Verification Code (OTP):");
-                if(otp) res.confirm(otp).then(() => location.reload());
+                confirmationResult = res;
+                document.getElementById('otp-area').classList.remove('hidden');
+                document.getElementById('t-check').classList.add('hidden');
             });
-        } else { alert("Access Denied / رقم غير مسجل"); }
+        } else {
+            alert(currentLang === 'ar' ? "أنت لست مؤهلاً للدخول" : "You are not authorized to enter.");
+        }
+    }
+
+    function verifyAdminOTP() {
+        const code = document.getElementById('otp-input').value;
+        confirmationResult.confirm(code).then(() => location.reload()).catch(e => alert("Invalid OTP"));
+    }
+
+    async function addAccountant() {
+        const ph = document.getElementById('new-staff-phone').value.trim();
+        if(!ph) return alert("Enter phone");
+        await db.collection('admins').doc(ph).set({ role: 'accountant', active: true });
+        alert("Accountant Added!");
+        document.getElementById('new-staff-phone').value = '';
     }
 
     async function updatePrice() {
-        const np = document.getElementById('new-price').value; if(!np) return;
-        startCooldown('t-upd-btn', langData[currentLang].upd);
-        await db.collection('settings').doc('prices').update({ srmd_price: parseFloat(np) });
+        const np = document.getElementById('new-price').value;
+        if(!np) return;
+        await db.collection('settings').doc('prices').set({ srmd_price: parseFloat(np) }, { merge: true });
         alert("Price Updated!");
+    }
+
+    async function fullReset() {
+        if(!confirm("Wipe everything?")) return;
+        const cols = ['investors', 'all_txids', 'audit_logs'];
+        for (const col of cols) {
+            const snap = await db.collection(col).get();
+            const batch = db.batch();
+            snap.forEach(doc => batch.delete(doc.ref));
+            await batch.commit();
+        }
+        alert("System Reset.");
+        location.reload();
     }
 
     auth.onAuthStateChanged(async u => { 
         if(u) {
             document.getElementById('auth-ui').classList.add('hidden');
             document.getElementById('dashboard').classList.remove('hidden');
-            
-            // التحقق من دور المستخدم (مالك أم لا)
             const d = (await db.collection('admins').doc(u.phoneNumber).get()).data();
-            if(d && d.role === 'owner') document.getElementById('price-card').classList.remove('hidden');
-            
-            // تحديث الإحصائيات العامة لحظياً
+            if(d && d.role === 'owner') {
+                document.getElementById('price-card').classList.remove('hidden');
+                document.getElementById('staff-card').classList.remove('hidden');
+                document.getElementById('owner-tools').classList.remove('hidden');
+            }
             db.collection('investors').onSnapshot(snap => {
-                let totalSrmd = 0;
+                let total = 0;
                 document.getElementById('admin-global-users').innerText = snap.size;
-                snap.forEach(doc => { totalSrmd += (doc.data().balance || 0); });
-                document.getElementById('admin-global-coins').innerText = totalSrmd.toLocaleString();
+                snap.forEach(doc => { total += (doc.data().balance || 0); });
+                document.getElementById('admin-global-coins').innerText = total.toLocaleString();
             });
             loadReqs();
         }
     });
 
-    function loadReqs(isManual = false) {
-        if(isManual) startCooldown('t-ref-btn', langData[currentLang].ref);
+    function loadReqs() {
         db.collection('investors').onSnapshot(snap => {
             const list = document.getElementById('pending-list'); list.innerHTML = '';
-            let hasRequests = false;
             snap.forEach(doc => {
-                const data = doc.data();
-                if(data.requests) {
-                    data.requests.forEach((req, idx) => {
-                        if(req.status === 'pending') {
-                            hasRequests = true;
-                            list.innerHTML += `
-                            <div class="card">
-                                <p style="font-size:0.8rem; color:var(--grey)">Investor: ${doc.id}</p>
-                                <span class="txid-box" onclick="copyVal('${req.txid}')">${req.txid}</span>
-                                <div class="action-group">
-                                    <input type="number" id="amt-${doc.id}-${idx}" placeholder="${langData[currentLang].amt}">
-                                    <button class="clickable" onclick="approveTx('${doc.id}', ${idx})">Approve ✅</button>
-                                    <hr style="border:0; border-top:1px solid #222; margin:5px 0;">
-                                    <select id="res-${doc.id}-${idx}">
-                                        <option value="">${langData[currentLang].rPrompt}</option>
-                                        <option value="invalid_txid">${langData[currentLang].r1}</option>
-                                        <option value="used_txid">${langData[currentLang].r2}</option>
-                                        <option value="amount_mismatch">${langData[currentLang].r3}</option>
-                                        <option value="wrong_network">${langData[currentLang].r4}</option>
-                                    </select>
-                                    <button class="clickable btn-rej" onclick="rejectTx('${doc.id}', ${idx})">Reject ❌</button>
-                                </div>
-                            </div>`;
-                        }
-                    });
-                }
+                (doc.data().requests || []).forEach((req, idx) => {
+                    if(req.status === 'pending') {
+                        list.innerHTML += `<div class="card"><p>${doc.id}</p><span class="txid-box" onclick="copyVal('${req.txid}')">${req.txid}</span>
+                        <input type="number" id="amt-${doc.id}-${idx}" placeholder="Amount"><button class="clickable" onclick="approveTx('${doc.id}', ${idx})">Approve</button>
+                        <button class="clickable btn-rej" onclick="rejectTx('${doc.id}', ${idx})">Reject</button></div>`;
+                    }
+                });
             });
-            if(!hasRequests) list.innerHTML = `<p style="color:var(--grey)">${currentLang === 'ar' ? 'لا يوجد طلبات معلقة' : 'No pending requests.'}</p>`;
         });
     }
 
     function copyVal(v) { navigator.clipboard.writeText(v).then(() => alert("Copied!")); }
 
     async function approveTx(ph, idx) {
-        const amtInput = document.getElementById(`amt-${ph}-${idx}`);
-        const amt = amtInput.value; if(!amt) return alert("Enter amount!");
+        const amt = document.getElementById(`amt-${ph}-${idx}`).value;
         const ref = db.collection('investors').doc(ph);
-        
         await db.runTransaction(async (t) => {
             const s = await t.get(ref);
             let rs = s.data().requests;
-            if(rs[idx].status !== 'pending') return;
             rs[idx].status = 'approved';
             t.update(ref, { balance: (s.data().balance || 0) + parseFloat(amt), requests: rs });
-            db.collection('audit_logs').add({ action: 'approve', investor: ph, amount: amt, by: auth.currentUser.phoneNumber, time: firebase.firestore.FieldValue.serverTimestamp() });
         });
-        alert('Done!');
+        alert('Approved!');
     }
 
     async function rejectTx(ph, idx) {
-        const rc = document.getElementById(`res-${ph}-${idx}`).value; if(!rc) return alert("Select reason!");
         const ref = db.collection('investors').doc(ph);
         const s = await ref.get(); let rs = s.data().requests;
-        rs[idx].status = 'rejected'; rs[idx].reasonCode = rc;
+        rs[idx].status = 'rejected';
         await ref.update({ requests: rs });
-        db.collection('audit_logs').add({ action: 'reject', investor: ph, reason: rc, by: auth.currentUser.phoneNumber, time: firebase.firestore.FieldValue.serverTimestamp() });
         alert('Rejected!');
     }
 </script>
