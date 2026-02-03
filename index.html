@@ -3,45 +3,33 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Sarmad Admin | التحكم والرقابة</title>
+    <title>Sarmad Admin | الرقابة المالية</title>
     <style>
-        :root { --green: #00ff88; --bg: #000; }
-        body { background: var(--bg); color: #fff; font-family: sans-serif; margin: 0; padding: 15px; }
-        .card { background: #0a0a0a; border: 1px solid #222; padding: 20px; border-radius: 15px; margin-bottom: 15px; }
-        input, select { background: #000; border: 1px solid #333; color: #fff; padding: 10px; border-radius: 5px; width: 100%; margin: 10px 0; }
-        .btn { width: 100%; padding: 12px; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; margin-top: 5px; }
-        .btn-go { background: var(--green); color: #000; }
-        .btn-rej { background: #ff4444; color: #fff; }
-        .txid-box { background: #111; color: var(--green); padding: 10px; border-radius: 5px; font-family: monospace; cursor: pointer; border: 1px dashed var(--green); display: block; margin: 10px 0; text-align: center; }
+        :root { --gold: #d4af37; --bg: #000; --white: #fff; --grey: #555; }
+        body { background: var(--bg); color: var(--white); font-family: sans-serif; padding: 15px; }
+        .card { background: #0a0a0a; border: 1px solid #222; padding: 15px; border-radius: 12px; margin-bottom: 10px; }
+        .clickable { color: var(--gold) !important; border: 1px solid var(--gold); cursor: pointer; background: none; padding: 10px; border-radius: 8px; font-weight: bold; }
+        .clickable:active { color: var(--grey) !important; border-color: var(--grey); pointer-events: none; }
+        input { background: #000; border: 1px solid #333; color: #fff; padding: 10px; width: 100%; box-sizing: border-box; }
         .hidden { display: none; }
-        table { width: 100%; border-collapse: collapse; font-size: 0.8rem; }
-        th, td { border: 1px solid #222; padding: 8px; text-align: center; }
     </style>
 </head>
 <body>
 
-<div id="auth-ui" class="card" style="max-width:400px; margin: 50px auto;">
-    <h2 style="color:var(--green); text-align:center;">دخول الإدارة</h2>
-    <div id="step-1">
-        <input type="tel" id="admin-phone" placeholder="+962xxxxxxxxx">
-        <button class="btn btn-go" onclick="checkAdmin()">تحقق من الصلاحية</button>
-    </div>
-    <div id="step-2" class="hidden">
-        <div id="recaptcha-container"></div>
-        <input type="text" id="admin-otp" placeholder="رمز OTP">
-        <button class="btn btn-go" onclick="verifyAdminOTP()">دخول النظام</button>
-    </div>
-    <p id="auth-msg" style="color:red; text-align:center;"></p>
+<div id="dashboard" class="hidden">
+    <button class="clickable" onclick="auth.signOut().then(()=>location.reload())">تسجيل الخروج</button>
+    <h3 id="role-title">لوحة الرقابة</h3>
+    <div id="pending-list"></div>
 </div>
 
-<div id="dashboard" class="hidden">
-    <div id="owner-panel" class="card hidden">
-        <h3 style="color:var(--green)">إدارة المحاسبين</h3>
-        <div id="staff-list"></div>
+<div id="auth-ui" style="max-width:400px; margin:auto; padding-top:100px;">
+    <input type="tel" id="admin-phone" placeholder="+962xxxxxxxxx">
+    <button class="clickable" style="width:100%; margin-top:10px;" onclick="checkAdmin()">تحقق ودخول</button>
+    <div id="recaptcha-container"></div>
+    <div id="otp-area" class="hidden">
+        <input type="text" id="admin-otp" placeholder="OTP">
+        <button class="clickable" style="width:100%; margin-top:10px;" onclick="verifyAdminOTP()">تأكيد</button>
     </div>
-
-    <h3 style="color:var(--green)">طلبات الشراء القادمة (Pending)</h3>
-    <div id="pending-list"></div>
 </div>
 
 <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
@@ -49,28 +37,18 @@
 <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
 
 <script>
-    const firebaseConfig = {
-        apiKey: "AIzaSyBVyEPs_xvz9Oryk-jpLev4ja7Sb1P6RaM",
-        authDomain: "sarmad-web.firebaseapp.com",
-        projectId: "sarmad-web",
-        storageBucket: "sarmad-web.firebasestorage.app",
-        messagingSenderId: "687271413195",
-        appId: "1:687271413195:web:f9564027c56ed0efb7e24e"
-    };
+    const firebaseConfig = { apiKey: "AIzaSyBVyEPs_xvz9Oryk-jpLev4ja7Sb1P6RaM", authDomain: "sarmad-web.firebaseapp.com", projectId: "sarmad-web", storageBucket: "sarmad-web.firebasestorage.app", messagingSenderId: "687271413195", appId: "1:687271413195:web:f9564027c56ed0efb7e24e" };
     firebase.initializeApp(firebaseConfig);
     const auth = firebase.auth();
     const db = firebase.firestore();
 
     async function checkAdmin() {
         const p = document.getElementById('admin-phone').value;
-        const adminDoc = await db.collection('admins').doc(p).get();
-        if (adminDoc.exists && adminDoc.data().active) {
-            document.getElementById('step-1').classList.add('hidden');
-            document.getElementById('step-2').classList.remove('hidden');
+        const snap = await db.collection('admins').doc(p).get();
+        if(snap.exists && snap.data().active) {
+            document.getElementById('otp-area').classList.remove('hidden');
             window.recaptchaVerifier = new firebase.auth.RecaptchaVerifier('recaptcha-container', {size:'invisible'});
             auth.signInWithPhoneNumber(p, window.recaptchaVerifier).then(res => window.confirmationResult = res);
-        } else {
-            document.getElementById('auth-msg').innerText = "ليس لديك صلاحية";
         }
     }
 
@@ -80,85 +58,73 @@
     }
 
     auth.onAuthStateChanged(async user => {
-        if (user) {
+        if(user) {
             document.getElementById('auth-ui').classList.add('hidden');
             document.getElementById('dashboard').classList.remove('hidden');
-            const myData = (await db.collection('admins').doc(user.phoneNumber).get()).data();
-            if (myData.role === 'owner') {
-                document.getElementById('owner-panel').classList.remove('hidden');
-                initStaffManager();
-            }
-            initRequestsManager(myData);
+            loadRequests();
         }
     });
 
-    function initRequestsManager(myData) {
+    function loadRequests() {
         db.collection('investors').onSnapshot(snap => {
             const list = document.getElementById('pending-list');
             list.innerHTML = '';
             snap.forEach(doc => {
                 const inv = doc.data();
-                const requests = inv.requests || [];
-                requests.forEach((req, idx) => {
-                    if (req.status === 'pending') {
-                        list.innerHTML += `
-                        <div class="card">
-                            <small>المستثمر: ${doc.id}</small>
-                            <span class="txid-box" onclick="copyTX('${req.txid}')">${req.txid}</span>
-                            <input type="number" id="amt-${doc.id}-${idx}" placeholder="أدخل مبلغ الرصيد">
-                            <button class="btn btn-go" onclick="approveReq('${doc.id}', ${idx})">تفعيل الرصيد ✅</button>
-                            <button class="btn btn-rej" onclick="rejectReq('${doc.id}', ${idx})">رفض الطلب ❌</button>
+                (inv.requests || []).forEach((req, idx) => {
+                    if(req.status === 'pending') {
+                        list.innerHTML += `<div class="card">
+                            <p>المستثمر: ${doc.id}</p>
+                            <p class="clickable" onclick="navigator.clipboard.writeText('${req.txid}').then(()=>alert('تم نسخ TXID'))">${req.txid}</p>
+                            <input type="number" id="amt-${doc.id}-${idx}" placeholder="المبلغ">
+                            <button class="clickable" onclick="approveTx('${doc.id}', ${idx})">اعتماد (Transaction)</button>
+                            <button class="clickable" style="color:red!important; border-color:red" onclick="rejectTx('${doc.id}', ${idx})">رفض</button>
                         </div>`;
                     }
                 });
             });
-        }, err => {
-            document.getElementById('pending-list').innerHTML = "<p style='color:orange'>بانتظار موافقة المدير العام على دخولك...</p>";
         });
     }
 
-    function copyTX(t) {
-        navigator.clipboard.writeText(t).then(() => alert('تم النسخ: ' + t));
-    }
-
-    async function approveReq(phone, idx) {
+    async function approveTx(phone, idx) {
         const amt = document.getElementById(`amt-${phone}-${idx}`).value;
-        if(!amt) return alert('أدخل المبلغ');
+        if(!amt) return;
         const ref = db.collection('investors').doc(phone);
-        const doc = await ref.get();
-        let reqs = doc.data().requests;
-        reqs[idx].status = 'approved';
-        await ref.update({
-            balance: (doc.data().balance || 0) + parseFloat(amt),
-            requests: reqs
-        });
-        alert('تم الاعتماد');
+
+        try {
+            await db.runTransaction(async (t) => {
+                const s = await t.get(ref);
+                let reqs = s.data().requests;
+                if(reqs[idx].status !== 'pending') throw "تمت معالجته مسبقاً";
+                
+                reqs[idx].status = 'approved';
+                t.update(ref, {
+                    balance: (s.data().balance || 0) + parseFloat(amt),
+                    requests: reqs
+                });
+                
+                // سجل التدقيق
+                db.collection('audit_logs').add({
+                    action: 'approve', investor: phone, amount: amt, by: auth.currentUser.phoneNumber, time: firebase.firestore.FieldValue.serverTimestamp()
+                });
+            });
+            alert('تم الاعتماد بنجاح');
+        } catch(e) { alert('خطأ: ' + e); }
     }
 
-    async function rejectReq(phone, idx) {
+    async function rejectTx(phone, idx) {
         const reason = prompt('سبب الرفض:');
         if(!reason) return;
         const ref = db.collection('investors').doc(phone);
-        const doc = await ref.get();
-        let reqs = doc.data().requests;
+        const s = await ref.get();
+        let reqs = s.data().requests;
         reqs[idx].status = 'rejected';
         reqs[idx].reason = reason;
         await ref.update({ requests: reqs });
-        alert('تم الرفض');
-    }
-
-    function initStaffManager() {
-        db.collection('admins').where('role','==','staff').onSnapshot(snap => {
-            let h = '<table><tr><th>المحاسب</th><th>الحالة</th><th>إجراء</th></tr>';
-            snap.forEach(doc => {
-                const s = doc.data();
-                h += `<tr><td>${doc.id}</td><td>${s.isApprovedByOwner?'نشط':'معلق'}</td>
-                <td><button onclick="toggleS('${doc.id}', ${!s.isApprovedByOwner})">${s.isApprovedByOwner?'إيقاف':'تفعيل'}</button></td></tr>`;
-            });
-            document.getElementById('staff-list').innerHTML = h + '</table>';
+        db.collection('audit_logs').add({
+            action: 'reject', investor: phone, reason: reason, by: auth.currentUser.phoneNumber, time: firebase.firestore.FieldValue.serverTimestamp()
         });
     }
-    function toggleS(id, st) { db.collection('admins').doc(id).update({isApprovedByOwner: st}); }
 </script>
 </body>
 </html>
