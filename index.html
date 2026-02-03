@@ -3,23 +3,34 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Sarmad Admin | Control Panel</title>
+    <title>Sarmad Admin | الرقابة المالية</title>
     <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;700&family=Orbitron:wght@700&display=swap" rel="stylesheet">
     <style>
-        :root { --gold: #d4af37; --bg: #000; --white: #fff; --grey: #888; --red: #ff4444; }
-        body { background: var(--bg); color: var(--white); font-family: 'Tajawal', sans-serif; margin: 0; }
-        header { background: #000; padding: 20px 15px 10px 15px; border-bottom: 2px solid var(--gold); }
+        :root { --gold: #d4af37; --bg: #000; --white: #ffffff; --grey: #888; --red: #ff4444; }
+        body { background: var(--bg); color: var(--white); font-family: 'Tajawal', sans-serif; margin: 0; padding: 15px; }
+        
+        header { background: #000; padding: 20px 15px 10px 15px; border-bottom: 2px solid var(--gold); margin-bottom: 20px; }
         .logo-container { text-align: center; margin-bottom: 15px; }
-        .logo { font-family: 'Orbitron', sans-serif; color: var(--white); font-size: 1.5rem; }
+        .logo { font-family: 'Orbitron', sans-serif; font-size: 1.5rem; letter-spacing: 2px; }
         .sub-header { display: flex; justify-content: space-between; align-items: center; max-width: 500px; margin: 0 auto; }
+        
         .card { background: #0a0a0a; border: 1px solid #222; padding: 20px; border-radius: 15px; margin-bottom: 20px; }
-        .clickable { color: var(--gold) !important; border: 1px solid var(--gold); background: none; padding: 8px 15px; border-radius: 8px; cursor: pointer; font-weight: bold; transition: 0.2s; }
+        .clickable { color: var(--gold) !important; border: 1px solid var(--gold); background: none; padding: 10px 15px; border-radius: 8px; cursor: pointer; font-weight: bold; transition: 0.2s; text-align: center; }
         .clickable:active { color: var(--grey) !important; border-color: var(--grey) !important; transform: scale(0.95); }
         .btn-rej { color: var(--red) !important; border-color: var(--red) !important; }
-        .container { max-width: 500px; margin: auto; padding: 20px; }
-        input { width: 100%; padding: 12px; margin: 10px 0; background: #000; border: 1px solid #333; color: #fff; border-radius: 8px; text-align: center; }
-        .action-group { margin-top: 15px; display: flex; flex-direction: column; gap: 12px; }
-        .txid-box { background: #111; color: var(--gold); padding: 12px; border-radius: 8px; font-family: monospace; cursor: pointer; border: 1px dashed var(--gold); display: block; text-align: center; word-break: break-all; }
+
+        input, select { 
+            background: #111; border: 1px solid #333; color: #fff; padding: 12px; 
+            width: 100%; border-radius: 8px; box-sizing: border-box; text-align: center; margin-bottom: 10px; font-family: 'Tajawal';
+        }
+
+        .txid-box { 
+            background: #111; color: var(--gold); padding: 12px; border-radius: 8px; 
+            font-family: monospace; cursor: pointer; border: 1px dashed var(--gold); 
+            display: block; margin: 10px 0; text-align: center; word-break: break-all;
+        }
+
+        .action-group { display: flex; flex-direction: column; gap: 5px; margin-top: 10px; }
         .en-mode { direction: ltr; font-family: sans-serif; }
         .hidden { display: none; }
     </style>
@@ -29,12 +40,12 @@
 <header>
     <div class="logo-container"><div class="logo">SARMAD ADMIN</div></div>
     <div class="sub-header">
-        <div class="clickable" style="font-size: 0.7rem; border:none;" onclick="auth.signOut().then(()=>location.reload())">Logout/خروج</div>
+        <div class="clickable" style="font-size: 0.7rem; border:none;" onclick="auth.signOut().then(()=>location.reload())">Logout / خروج</div>
         <button class="clickable" onclick="toggleLang()" id="lang-switcher">EN</button>
     </div>
 </header>
 
-<div class="container">
+<div class="container" style="max-width: 500px; margin: auto;">
     <div id="auth-ui" class="card" style="text-align:center;">
         <h3 id="t-login">دخول الإدارة</h3>
         <input type="tel" id="admin-phone" placeholder="+962xxxxxxxxx">
@@ -64,8 +75,8 @@
 
     let currentLang = 'ar';
     const langData = {
-        ar: { switcher: 'EN', login: 'دخول الإدارة', check: 'تحقق', verify: 'دخول', title: 'الطلبات المعلقة', copy: 'تم النسخ', approve: 'إعتماد ✅', reject: 'رفض ❌', amt: 'أدخل المبلغ' },
-        en: { switcher: 'عربي', login: 'Admin Login', check: 'Check', verify: 'Verify', title: 'Pending Requests', copy: 'Copied', approve: 'Approve ✅', reject: 'Reject ❌', amt: 'Enter Amount' }
+        ar: { switcher: 'EN', login: 'دخول الإدارة', check: 'تحقق', verify: 'دخول', title: 'الطلبات المعلقة', copy: 'تم النسخ', approve: 'إعتماد ✅', reject: 'رفض الطلب ❌', amt: 'أدخل مبلغ الإيداع', reasonPrompt: 'اختر سبب الرفض...', r1: 'رقم عملية غير صحيح', r2: 'رقم عملية مستخدم سابقاً', r3: 'خطأ في مبلغ التحويل', r4: 'شبكة تحويل خاطئة' },
+        en: { switcher: 'عربي', login: 'Admin Login', check: 'Check', verify: 'Verify', title: 'Pending Requests', copy: 'Copied', approve: 'Approve ✅', reject: 'Reject ❌', amt: 'Enter Amount', reasonPrompt: 'Select rejection reason...', r1: 'Invalid TXID', r2: 'Used TXID', r3: 'Amount Mismatch', r4: 'Wrong Network' }
     };
 
     function toggleLang() {
@@ -76,6 +87,7 @@
         document.getElementById('t-login').innerText = langData[currentLang].login;
         document.getElementById('t-check').innerText = langData[currentLang].check;
         document.getElementById('t-title').innerText = langData[currentLang].title;
+        loadReqs(); // إعادة رسم القائمة لتحديث لغة الـ Dropdown
     }
 
     async function checkAdmin() {
@@ -97,23 +109,39 @@
 
     function loadReqs() {
         db.collection('investors').onSnapshot(snap => {
-            const list = document.getElementById('pending-list'); list.innerHTML = '';
+            const list = document.getElementById('pending-list'); 
+            list.innerHTML = '';
+            let hasData = false;
             snap.forEach(doc => {
                 const inv = doc.data();
                 (inv.requests || []).forEach((req, idx) => {
                     if(req.status === 'pending') {
-                        list.innerHTML += `<div class="card">
-                            <p>Investor: ${doc.id}</p>
+                        hasData = true;
+                        list.innerHTML += `
+                        <div class="card">
+                            <p style="font-size:0.8rem; margin-bottom:5px;">Investor: ${doc.id}</p>
                             <span class="txid-box" onclick="copyValue('${req.txid}')">${req.txid}</span>
+                            
                             <div class="action-group">
                                 <input type="number" id="amt-${doc.id}-${idx}" placeholder="${langData[currentLang].amt}">
                                 <button class="clickable" onclick="approveTx('${doc.id}', ${idx})">${langData[currentLang].approve}</button>
+                                
+                                <hr style="border:0; border-top:1px solid #222; margin:10px 0;">
+                                
+                                <select id="reason-${doc.id}-${idx}">
+                                    <option value="">${langData[currentLang].reasonPrompt}</option>
+                                    <option value="invalid_txid">${langData[currentLang].r1}</option>
+                                    <option value="used_txid">${langData[currentLang].r2}</option>
+                                    <option value="amount_mismatch">${langData[currentLang].r3}</option>
+                                    <option value="wrong_network">${langData[currentLang].r4}</option>
+                                </select>
                                 <button class="clickable btn-rej" onclick="rejectTx('${doc.id}', ${idx})">${langData[currentLang].reject}</button>
                             </div>
                         </div>`;
                     }
                 });
             });
+            if(!hasData) list.innerHTML = '<p style="text-align:center; color:#555;">لا توجد طلبات معلقة</p>';
         });
     }
 
@@ -121,7 +149,7 @@
 
     async function approveTx(phone, idx) {
         const amt = document.getElementById(`amt-${phone}-${idx}`).value;
-        if(!amt) return;
+        if(!amt) return alert("أدخل المبلغ");
         const ref = db.collection('investors').doc(phone);
         await db.runTransaction(async (t) => {
             const s = await t.get(ref);
@@ -130,19 +158,22 @@
             t.update(ref, { balance: (s.data().balance || 0) + parseFloat(amt), requests: reqs });
             db.collection('audit_logs').add({ action: 'approve', investor: phone, amount: amt, by: auth.currentUser.phoneNumber, time: firebase.firestore.FieldValue.serverTimestamp() });
         });
-        alert('Done ✅');
+        alert('Approved ✅');
     }
 
     async function rejectTx(phone, idx) {
-        const code = prompt("1-Invalid TXID, 2-Used TXID, 3-Amount Mismatch, 4-Wrong Network");
-        let rc = code==="1"?"invalid_txid":code==="2"?"used_txid":code==="3"?"amount_mismatch":code==="4"?"wrong_network":"";
-        if(!rc) return;
+        const reasonSelect = document.getElementById(`reason-${phone}-${idx}`);
+        const reasonCode = reasonSelect.value;
+        if(!reasonCode) return alert(currentLang === 'ar' ? "يرجى اختيار سبب الرفض أولاً" : "Please select a reason first");
+
         const ref = db.collection('investors').doc(phone);
         const s = await ref.get();
         let reqs = s.data().requests;
-        reqs[idx].status = 'rejected'; reqs[idx].reasonCode = rc;
+        reqs[idx].status = 'rejected'; 
+        reqs[idx].reasonCode = reasonCode;
+
         await ref.update({ requests: reqs });
-        db.collection('audit_logs').add({ action: 'reject', investor: phone, reason: rc, by: auth.currentUser.phoneNumber, time: firebase.firestore.FieldValue.serverTimestamp() });
+        db.collection('audit_logs').add({ action: 'reject', investor: phone, reason: reasonCode, by: auth.currentUser.phoneNumber, time: firebase.firestore.FieldValue.serverTimestamp() });
         alert('Rejected ❌');
     }
 </script>
