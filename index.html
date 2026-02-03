@@ -1,38 +1,47 @@
 <!DOCTYPE html>
 <html lang="ar" dir="rtl">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Sarmad Admin</title>
-
-<style>
-:root { --green:#00ff88; --bg:#000; }
-body { background:var(--bg); color:#fff; font-family:sans-serif; margin:0; padding:15px; }
-.card { background:#0a0a0a; border:1px solid #222; padding:20px; border-radius:15px; margin-bottom:15px; }
-input { width:100%; padding:10px; margin:10px 0; background:#000; border:1px solid #333; color:#fff; border-radius:5px; }
-button { width:100%; padding:12px; border:none; border-radius:8px; font-weight:bold; cursor:pointer; }
-.go { background:var(--green); color:#000; }
-.rej { background:#ff4444; color:#fff; }
-.tx { background:#111; color:var(--green); padding:8px; border:1px dashed var(--green); border-radius:5px; text-align:center; }
-.hidden { display:none; }
-</style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sarmad Admin | التحكم والرقابة</title>
+    <style>
+        :root { --green: #00ff88; --bg: #000; }
+        body { background: var(--bg); color: #fff; font-family: sans-serif; margin: 0; padding: 15px; }
+        .card { background: #0a0a0a; border: 1px solid #222; padding: 20px; border-radius: 15px; margin-bottom: 15px; }
+        input, select { background: #000; border: 1px solid #333; color: #fff; padding: 10px; border-radius: 5px; width: 100%; margin: 10px 0; }
+        .btn { width: 100%; padding: 12px; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; margin-top: 5px; }
+        .btn-go { background: var(--green); color: #000; }
+        .btn-rej { background: #ff4444; color: #fff; }
+        .txid-box { background: #111; color: var(--green); padding: 10px; border-radius: 5px; font-family: monospace; cursor: pointer; border: 1px dashed var(--green); display: block; margin: 10px 0; text-align: center; }
+        .hidden { display: none; }
+        table { width: 100%; border-collapse: collapse; font-size: 0.8rem; }
+        th, td { border: 1px solid #222; padding: 8px; text-align: center; }
+    </style>
 </head>
-
 <body>
 
-<div id="auth" class="card" style="max-width:400px;margin:auto;">
-  <h3 style="color:var(--green);text-align:center;">دخول الإدارة</h3>
-  <input id="phone" placeholder="+962xxxxxxxxx">
-  <div id="recaptcha"></div>
-  <button class="go" onclick="sendOTP()">إرسال الرمز</button>
-  <input id="otp" placeholder="OTP" class="hidden">
-  <button class="go hidden" id="verifyBtn" onclick="verifyOTP()">دخول</button>
+<div id="auth-ui" class="card" style="max-width:400px; margin: 50px auto;">
+    <h2 style="color:var(--green); text-align:center;">دخول الإدارة</h2>
+    <div id="step-1">
+        <input type="tel" id="admin-phone" placeholder="+962xxxxxxxxx">
+        <button class="btn btn-go" onclick="checkAdmin()">تحقق من الصلاحية</button>
+    </div>
+    <div id="step-2" class="hidden">
+        <div id="recaptcha-container"></div>
+        <input type="text" id="admin-otp" placeholder="رمز OTP">
+        <button class="btn btn-go" onclick="verifyAdminOTP()">دخول النظام</button>
+    </div>
+    <p id="auth-msg" style="color:red; text-align:center;"></p>
 </div>
 
-<div id="panel" class="hidden">
-  <h3 style="color:var(--green)">طلبات الشراء</h3>
-  <div id="list"></div>
-  <button onclick="auth.signOut()">تسجيل خروج</button>
+<div id="dashboard" class="hidden">
+    <div id="owner-panel" class="card hidden">
+        <h3 style="color:var(--green)">إدارة المحاسبين</h3>
+        <div id="staff-list"></div>
+    </div>
+
+    <h3 style="color:var(--green)">طلبات الشراء القادمة (Pending)</h3>
+    <div id="pending-list"></div>
 </div>
 
 <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
@@ -40,80 +49,116 @@ button { width:100%; padding:12px; border:none; border-radius:8px; font-weight:b
 <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
 
 <script>
-firebase.initializeApp({
-  apiKey: "AIzaSyBVyEPs_xvz9Oryk-jpLev4ja7Sb1P6RaM",
-  authDomain: "sarmad-web.firebaseapp.com",
-  projectId: "sarmad-web"
-});
+    const firebaseConfig = {
+        apiKey: "AIzaSyBVyEPs_xvz9Oryk-jpLev4ja7Sb1P6RaM",
+        authDomain: "sarmad-web.firebaseapp.com",
+        projectId: "sarmad-web",
+        storageBucket: "sarmad-web.firebasestorage.app",
+        messagingSenderId: "687271413195",
+        appId: "1:687271413195:web:f9564027c56ed0efb7e24e"
+    };
+    firebase.initializeApp(firebaseConfig);
+    const auth = firebase.auth();
+    const db = firebase.firestore();
 
-const auth = firebase.auth();
-const db = firebase.firestore();
+    async function checkAdmin() {
+        const p = document.getElementById('admin-phone').value;
+        const adminDoc = await db.collection('admins').doc(p).get();
+        if (adminDoc.exists && adminDoc.data().active) {
+            document.getElementById('step-1').classList.add('hidden');
+            document.getElementById('step-2').classList.remove('hidden');
+            window.recaptchaVerifier = new firebase.auth.RecaptchaVerifier('recaptcha-container', {size:'invisible'});
+            auth.signInWithPhoneNumber(p, window.recaptchaVerifier).then(res => window.confirmationResult = res);
+        } else {
+            document.getElementById('auth-msg').innerText = "ليس لديك صلاحية";
+        }
+    }
 
-function sendOTP(){
-  window.recaptchaVerifier = new firebase.auth.RecaptchaVerifier('recaptcha',{size:'invisible'});
-  auth.signInWithPhoneNumber(phone.value,recaptchaVerifier).then(r=>{
-    window.confirmationResult=r;
-    otp.classList.remove('hidden');
-    verifyBtn.classList.remove('hidden');
-  });
-}
+    function verifyAdminOTP() {
+        const c = document.getElementById('admin-otp').value;
+        window.confirmationResult.confirm(c).then(() => location.reload());
+    }
 
-function verifyOTP(){
-  confirmationResult.confirm(otp.value).then(()=>location.reload());
-}
-
-auth.onAuthStateChanged(async user=>{
-  if(!user) return;
-  const admin = await db.collection('admins').doc(user.phoneNumber).get();
-  if(!admin.exists) return alert('غير مصرح');
-  auth.classList.add('hidden');
-  panel.classList.remove('hidden');
-  loadRequests();
-});
-
-function loadRequests(){
-  db.collection('purchase_requests').where('status','==','pending')
-  .onSnapshot(s=>{
-    list.innerHTML='';
-    s.forEach(d=>{
-      const r=d.data();
-      list.innerHTML+=`
-      <div class="card">
-        <small>${r.investorPhone}</small>
-        <div class="tx">${r.txid}</div>
-        <input id="amt-${d.id}" placeholder="المبلغ">
-        <button class="go" onclick="approve('${d.id}')">اعتماد</button>
-        <button class="rej" onclick="reject('${d.id}')">رفض</button>
-      </div>`;
+    auth.onAuthStateChanged(async user => {
+        if (user) {
+            document.getElementById('auth-ui').classList.add('hidden');
+            document.getElementById('dashboard').classList.remove('hidden');
+            const myData = (await db.collection('admins').doc(user.phoneNumber).get()).data();
+            if (myData.role === 'owner') {
+                document.getElementById('owner-panel').classList.remove('hidden');
+                initStaffManager();
+            }
+            initRequestsManager(myData);
+        }
     });
-  });
-}
 
-async function approve(id){
-  const amt=parseFloat(document.getElementById(`amt-${id}`).value);
-  if(!amt) return;
-  const ref=db.collection('purchase_requests').doc(id);
+    function initRequestsManager(myData) {
+        db.collection('investors').onSnapshot(snap => {
+            const list = document.getElementById('pending-list');
+            list.innerHTML = '';
+            snap.forEach(doc => {
+                const inv = doc.data();
+                const requests = inv.requests || [];
+                requests.forEach((req, idx) => {
+                    if (req.status === 'pending') {
+                        list.innerHTML += `
+                        <div class="card">
+                            <small>المستثمر: ${doc.id}</small>
+                            <span class="txid-box" onclick="copyTX('${req.txid}')">${req.txid}</span>
+                            <input type="number" id="amt-${doc.id}-${idx}" placeholder="أدخل مبلغ الرصيد">
+                            <button class="btn btn-go" onclick="approveReq('${doc.id}', ${idx})">تفعيل الرصيد ✅</button>
+                            <button class="btn btn-rej" onclick="rejectReq('${doc.id}', ${idx})">رفض الطلب ❌</button>
+                        </div>`;
+                    }
+                });
+            });
+        }, err => {
+            document.getElementById('pending-list').innerHTML = "<p style='color:orange'>بانتظار موافقة المدير العام على دخولك...</p>";
+        });
+    }
 
-  await db.runTransaction(async t=>{
-    const r=await t.get(ref);
-    const inv=db.collection('investors').doc(r.data().investorPhone);
-    const i=await t.get(inv);
+    function copyTX(t) {
+        navigator.clipboard.writeText(t).then(() => alert('تم النسخ: ' + t));
+    }
 
-    t.update(inv,{balance:(i.data().balance||0)+amt});
-    t.update(ref,{status:'approved',approvedBy:auth.currentUser.phoneNumber});
-    t.set(db.collection('audit_logs').doc(),{
-      action:'approve',request:id,amount:amt,by:auth.currentUser.phoneNumber
-    });
-  });
-}
+    async function approveReq(phone, idx) {
+        const amt = document.getElementById(`amt-${phone}-${idx}`).value;
+        if(!amt) return alert('أدخل المبلغ');
+        const ref = db.collection('investors').doc(phone);
+        const doc = await ref.get();
+        let reqs = doc.data().requests;
+        reqs[idx].status = 'approved';
+        await ref.update({
+            balance: (doc.data().balance || 0) + parseFloat(amt),
+            requests: reqs
+        });
+        alert('تم الاعتماد');
+    }
 
-async function reject(id){
-  const reason=prompt('سبب الرفض');
-  if(!reason) return;
-  await db.collection('purchase_requests').doc(id).update({
-    status:'rejected',reason
-  });
-}
+    async function rejectReq(phone, idx) {
+        const reason = prompt('سبب الرفض:');
+        if(!reason) return;
+        const ref = db.collection('investors').doc(phone);
+        const doc = await ref.get();
+        let reqs = doc.data().requests;
+        reqs[idx].status = 'rejected';
+        reqs[idx].reason = reason;
+        await ref.update({ requests: reqs });
+        alert('تم الرفض');
+    }
+
+    function initStaffManager() {
+        db.collection('admins').where('role','==','staff').onSnapshot(snap => {
+            let h = '<table><tr><th>المحاسب</th><th>الحالة</th><th>إجراء</th></tr>';
+            snap.forEach(doc => {
+                const s = doc.data();
+                h += `<tr><td>${doc.id}</td><td>${s.isApprovedByOwner?'نشط':'معلق'}</td>
+                <td><button onclick="toggleS('${doc.id}', ${!s.isApprovedByOwner})">${s.isApprovedByOwner?'إيقاف':'تفعيل'}</button></td></tr>`;
+            });
+            document.getElementById('staff-list').innerHTML = h + '</table>';
+        });
+    }
+    function toggleS(id, st) { db.collection('admins').doc(id).update({isApprovedByOwner: st}); }
 </script>
 </body>
 </html>
