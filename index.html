@@ -1,195 +1,92 @@
-<!DOCTYPE html>
-<html lang="ar" dir="rtl">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Sarmad Pro | نظام الإدارة والرقابة</title>
-    <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;700&family=Orbitron:wght@400;700&display=swap" rel="stylesheet">
-    <style>
-        :root { --primary: #00ff88; --bg: #000; --card: #0a0a0a; }
-        body { background: var(--bg); color: #fff; font-family: 'Tajawal', sans-serif; margin: 0; padding: 20px; }
-        .container { max-width: 800px; margin: 0 auto; text-align: center; }
-        .logo { font-family: 'Orbitron', sans-serif; color: var(--primary); font-size: 1.5rem; margin-bottom: 30px; letter-spacing: 2px; }
-        .card { background: var(--card); border: 1px solid #222; padding: 20px; border-radius: 15px; margin-bottom: 20px; box-shadow: 0 5px 15px rgba(0,0,0,0.5); }
-        input { width: 80%; padding: 12px; margin: 10px 0; background: #111; border: 1px solid #333; color: #fff; border-radius: 8px; text-align: center; }
-        button { background: var(--primary); color: #000; border: none; padding: 12px 25px; border-radius: 8px; cursor: pointer; font-weight: bold; margin: 10px; }
-        table { width: 100%; border-collapse: collapse; margin-top: 20px; font-size: 0.9rem; }
-        th, td { border: 1px solid #222; padding: 12px; text-align: center; }
-        th { color: var(--primary); background: #111; }
-        .status-badge { padding: 4px 8px; border-radius: 4px; font-size: 0.7rem; }
-        .hidden { display: none; }
-        .owner-section { border: 2px solid var(--primary); padding: 15px; margin-top: 30px; border-radius: 10px; }
-    </style>
-</head>
-<body>
+<script>
+firebase.initializeApp(firebaseConfig);
+const auth = firebase.auth();
+const db = firebase.firestore();
 
-    <div class="container">
-        <div class="logo">SARMAD_PRO_CONTROL</div>
+auth.onAuthStateChanged(async user => {
+  if (!user) return;
 
-        <div id="auth-section" class="card">
-            <div id="step-1">
-                <h3>التحقق من هوية المسؤول</h3>
-                <input type="tel" id="phone" placeholder="+962xxxxxxxxx">
-                <button onclick="checkAdmin()">تحقق من الرقم</button>
-            </div>
-            
-            <div id="step-2" class="hidden">
-                <p style="color:var(--primary)">رقم معتمد ✅ جاري طلب الرمز...</p>
-                <div id="recaptcha-container"></div>
-                <input type="text" id="otp" placeholder="أدخل رمز OTP">
-                <button onclick="verifyOTP()">دخول النظام</button>
-            </div>
-            <p id="msg" style="color:red"></p>
-        </div>
+  const adminSnap = await db.collection('admins').doc(user.phoneNumber).get();
+  if (!adminSnap.exists) return alert('غير مصرح');
 
-        <div id="dashboard" class="hidden">
-            <div class="card">
-                <h2 id="welcome-msg">مرحباً بك</h2>
-                <button onclick="location.reload()" style="background:#444; color:#fff">خروج</button>
-            </div>
+  initRequests();
+});
 
-            <div id="owner-only" class="hidden owner-section card">
-                <h3 style="color:var(--primary)">إدارة المحاسبين (الموافقات)</h3>
-                <table id="staff-table">
-                    <thead>
-                        <tr><th>المحاسب</th><th>الحالة</th><th>تغيير الصلاحية</th></tr>
-                    </thead>
-                    <tbody id="staff-list"></tbody>
-                </table>
-            </div>
+function initRequests() {
+  db.collection('purchase_requests')
+    .where('status','==','pending')
+    .onSnapshot(snap => {
+      const list = document.getElementById('pending-list');
+      list.innerHTML = '';
+      snap.forEach(doc => {
+        const r = doc.data();
+        list.innerHTML += `
+          <div class="card">
+            <small>${r.investorPhone}</small>
+            <span class="txid-box">${r.txid}</span>
+            <input id="amt-${doc.id}" type="number" placeholder="المبلغ">
+            <button class="btn btn-go" onclick="approve('${doc.id}')">اعتماد</button>
+            <button class="btn btn-rej" onclick="reject('${doc.id}')">رفض</button>
+          </div>
+        `;
+      });
+    });
+}
 
-            <div id="main-data" class="card">
-                <h3>طلبات المستثمرين والموافقات المالية</h3>
-                <table id="investor-table">
-                    <thead>
-                        <tr><th>المستثمر</th><th>الرصيد الحالي</th><th>تحديث الرصيد</th></tr>
-                    </thead>
-                    <tbody id="investor-list"></tbody>
-                </table>
-            </div>
-        </div>
-    </div>
+async function approve(id) {
+  const amt = parseFloat(document.getElementById(`amt-${id}`).value);
+  if (!amt) return alert('أدخل المبلغ');
 
-    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
+  const reqRef = db.collection('purchase_requests').doc(id);
 
-    <script>
-        const firebaseConfig = {
-            apiKey: "AIzaSyBVyEPs_xvz9Oryk-jpLev4ja7Sb1P6RaM",
-            authDomain: "sarmad-web.firebaseapp.com",
-            projectId: "sarmad-web",
-            storageBucket: "sarmad-web.firebasestorage.app",
-            messagingSenderId: "687271413195",
-            appId: "1:687271413195:web:f9564027c56ed0efb7e24e"
-        };
+  await db.runTransaction(async t => {
+    const reqSnap = await t.get(reqRef);
+    if (reqSnap.data().status !== 'pending') throw 'تمت المعالجة سابقًا';
 
-        firebase.initializeApp(firebaseConfig);
-        const auth = firebase.auth();
-        const db = firebase.firestore();
+    const invRef = db.collection('investors').doc(reqSnap.data().investorPhone);
+    const invSnap = await t.get(invRef);
 
-        // 1. التحقق من وجود الرقم في قائمة الإدارة قبل إرسال الرسالة
-        async function checkAdmin() {
-            const phone = document.getElementById('phone').value;
-            const msg = document.getElementById('msg');
-            msg.innerText = "جاري التحقق...";
-            
-            try {
-                const adminDoc = await db.collection('admins').doc(phone).get();
-                if (adminDoc.exists) {
-                    msg.innerText = "";
-                    document.getElementById('step-1').classList.add('hidden');
-                    document.getElementById('step-2').classList.remove('hidden');
-                    sendOTP(phone);
-                } else {
-                    msg.innerText = "هذا الرقم ليس له صلاحيات إدارية.";
-                }
-            } catch (e) { msg.innerText = "خطأ في التحقق."; }
-        }
+    t.update(invRef, {
+      balance: (invSnap.data().balance || 0) + amt
+    });
 
-        function sendOTP(phone) {
-            window.recaptchaVerifier = new firebase.auth.RecaptchaVerifier('recaptcha-container', { 'size': 'invisible' });
-            auth.signInWithPhoneNumber(phone, window.recaptchaVerifier)
-                .then(res => { window.confirmationResult = res; })
-                .catch(err => { document.getElementById('msg').innerText = "خطأ: " + err.message; });
-        }
+    t.update(reqRef, {
+      status: 'approved',
+      approvedBy: auth.currentUser.phoneNumber,
+      approvedAt: firebase.firestore.FieldValue.serverTimestamp()
+    });
 
-        function verifyOTP() {
-            const code = document.getElementById('otp').value;
-            window.confirmationResult.confirm(code).then(() => {
-                location.reload();
-            }).catch(() => { document.getElementById('msg').innerText = "الرمز غير صحيح"; });
-        }
+    t.set(db.collection('audit_logs').doc(), {
+      action: 'approve',
+      requestId: id,
+      amount: amt,
+      by: auth.currentUser.phoneNumber,
+      time: firebase.firestore.FieldValue.serverTimestamp()
+    });
+  });
 
-        // 2. مراقبة حالة الدخول وتحميل البيانات بناءً على الرتبة
-        auth.onAuthStateChanged(async (user) => {
-            if (user) {
-                document.getElementById('auth-section').classList.add('hidden');
-                document.getElementById('dashboard').classList.remove('hidden');
-                
-                const adminData = (await db.collection('admins').doc(user.phoneNumber).get()).data();
-                document.getElementById('welcome-msg').innerText = "مرحباً: " + (adminData.role === 'owner' ? "المدير العام" : "محاسب");
+  alert('تم الاعتماد');
+}
 
-                if (adminData.role === 'owner') {
-                    document.getElementById('owner-only').classList.remove('hidden');
-                    loadStaffManagement(); // المالك يدير المحاسبين
-                }
-                
-                loadInvestorsData(adminData); // تحميل بيانات المستثمرين
-            }
-        });
+async function reject(id) {
+  const reason = prompt('سبب الرفض');
+  if (!reason) return;
 
-        function loadStaffManagement() {
-            db.collection('admins').where('role', '==', 'staff').onSnapshot(snap => {
-                const list = document.getElementById('staff-list');
-                list.innerHTML = '';
-                snap.forEach(doc => {
-                    const s = doc.data();
-                    list.innerHTML += `
-                        <tr>
-                            <td>${doc.id}</td>
-                            <td>${s.isApprovedByOwner ? '✅ معتمد' : '❌ بانتظار موافقتك'}</td>
-                            <td><button onclick="toggleStaff('${doc.id}', ${!s.isApprovedByOwner})">
-                                ${s.isApprovedByOwner ? 'إيقاف' : 'تفعيل'}
-                            </button></td>
-                        </tr>`;
-                });
-            });
-        }
+  await db.collection('purchase_requests').doc(id).update({
+    status: 'rejected',
+    reason,
+    rejectedBy: auth.currentUser.phoneNumber,
+    rejectedAt: firebase.firestore.FieldValue.serverTimestamp()
+  });
 
-        function toggleStaff(id, status) {
-            db.collection('admins').doc(id).update({ isApprovedByOwner: status });
-        }
+  await db.collection('audit_logs').add({
+    action: 'reject',
+    requestId: id,
+    reason,
+    by: auth.currentUser.phoneNumber,
+    time: firebase.firestore.FieldValue.serverTimestamp()
+  });
 
-        function loadInvestorsData(adminInfo) {
-            db.collection('investors').onSnapshot(snap => {
-                const list = document.getElementById('investor-list');
-                list.innerHTML = '';
-                snap.forEach(doc => {
-                    const inv = doc.data();
-                    list.innerHTML += `
-                        <tr>
-                            <td>${doc.id}</td>
-                            <td>${inv.balance || 0} SRMD</td>
-                            <td>
-                                <input type="number" id="inp-${doc.id}" style="width:60px" placeholder="الجديد">
-                                <button onclick="updateInv('${doc.id}')">تحديث</button>
-                            </td>
-                        </tr>`;
-                });
-            }, err => {
-                document.getElementById('investor-list').innerHTML = "<tr><td colspan='3' style='color:orange'>بانتظار تفعيل صلاحياتك من المدير العام...</td></tr>";
-            });
-        }
-
-        function updateInv(phone) {
-            const val = document.getElementById('inp-'+phone).value;
-            if(!val) return;
-            db.collection('investors').doc(phone).update({
-                balance: parseFloat(val),
-                status: 'approved'
-            }).then(() => alert('تم تحديث رصيد المستثمر!'));
-        }
-    </script>
-</body>
-</html>
+  alert('تم الرفض');
+}
+</script>
