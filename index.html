@@ -18,13 +18,12 @@
         .card { background: #0a0a0a; border: 1px solid #222; padding: 20px; border-radius: 15px; margin-bottom: 20px; text-align: center; }
         .clickable { color: var(--gold); border: 1px solid var(--gold); background: none; padding: 8px 15px; border-radius: 8px; cursor: pointer; font-weight: bold; transition: 0.2s; }
         .clickable:disabled { color: var(--grey); border-color: var(--grey); cursor: not-allowed; opacity: 0.6; }
-        .clickable:active { transform: scale(0.95); }
         .btn-rej { color: var(--red) !important; border-color: var(--red) !important; }
 
-        /* عدادات الإدارة */
+        /* عدادات الإدارة العامة */
         .stats-grid { display: flex; justify-content: space-around; margin-bottom: 10px; }
         .stat-box { flex: 1; }
-        .stat-label { font-size: 0.65rem; color: var(--grey); text-transform: uppercase; display: block; }
+        .stat-label { font-size: 0.65rem; color: var(--grey); text-transform: uppercase; display: block; margin-bottom: 5px; }
         .stat-val { font-size: 1.2rem; font-weight: bold; color: var(--gold); font-family: 'Orbitron', sans-serif; }
 
         input, select { background: #111; border: 1px solid #333; color: #fff; padding: 12px; width: 100%; border-radius: 8px; box-sizing: border-box; text-align: center; margin-bottom: 10px; font-family: inherit; }
@@ -107,7 +106,8 @@
     function toggleLang() {
         currentLang = currentLang === 'en' ? 'ar' : 'en';
         document.getElementById('admin-html').dir = currentLang === 'ar' ? 'rtl' : 'ltr';
-        document.getElementById('body-tag').className = currentLang + "-mode";
+        document.getElementById('body-tag').className = currentLang === 'ar' ? 'ar-mode' : 'en-mode';
+        
         document.getElementById('lang-switcher').innerText = langData[currentLang].switcher;
         document.getElementById('logout-btn').innerText = langData[currentLang].logout;
         document.getElementById('t-login').innerText = langData[currentLang].login;
@@ -122,7 +122,7 @@
     }
 
     async function checkAdmin() {
-        const p = document.getElementById('admin-phone').value;
+        const p = document.getElementById('admin-phone').value; if(!p) return;
         const s = await db.collection('admins').doc(p).get();
         if(s.exists && s.data().active) {
             window.recaptchaVerifier = new firebase.auth.RecaptchaVerifier('recaptcha-container', {size:'invisible'});
@@ -130,24 +130,26 @@
                 const otp = prompt("Enter Verification Code (OTP):");
                 if(otp) res.confirm(otp).then(() => location.reload());
             });
-        } else { alert("Access Denied: Number not registered."); }
+        } else { alert("Access Denied / رقم غير مسجل"); }
     }
 
     async function updatePrice() {
         const np = document.getElementById('new-price').value; if(!np) return;
         startCooldown('t-upd-btn', langData[currentLang].upd);
         await db.collection('settings').doc('prices').update({ srmd_price: parseFloat(np) });
-        alert("Success: Token price updated!");
+        alert("Price Updated!");
     }
 
     auth.onAuthStateChanged(async u => { 
         if(u) {
             document.getElementById('auth-ui').classList.add('hidden');
             document.getElementById('dashboard').classList.remove('hidden');
-            const d = (await db.collection('admins').doc(u.phoneNumber).get()).data();
-            if(d.role === 'owner') document.getElementById('price-card').classList.remove('hidden');
             
-            // استماع للعدادات العامة
+            // التحقق من دور المستخدم (مالك أم لا)
+            const d = (await db.collection('admins').doc(u.phoneNumber).get()).data();
+            if(d && d.role === 'owner') document.getElementById('price-card').classList.remove('hidden');
+            
+            // تحديث الإحصائيات العامة لحظياً
             db.collection('investors').onSnapshot(snap => {
                 let totalSrmd = 0;
                 document.getElementById('admin-global-users').innerText = snap.size;
@@ -160,43 +162,48 @@
 
     function loadReqs(isManual = false) {
         if(isManual) startCooldown('t-ref-btn', langData[currentLang].ref);
-        db.collection('investors').get().then(snap => {
+        db.collection('investors').onSnapshot(snap => {
             const list = document.getElementById('pending-list'); list.innerHTML = '';
             let hasRequests = false;
             snap.forEach(doc => {
-                (doc.data().requests || []).forEach((req, idx) => {
-                    if(req.status === 'pending') {
-                        hasRequests = true;
-                        list.innerHTML += `
-                        <div class="card">
-                            <p style="font-size:0.8rem; color:var(--grey)">Investor: ${doc.id}</p>
-                            <span class="txid-box" onclick="copyVal('${req.txid}')">${req.txid}</span>
-                            <div class="action-group">
-                                <input type="number" id="amt-${doc.id}-${idx}" placeholder="${langData[currentLang].amt}">
-                                <button class="clickable" onclick="approveTx('${doc.id}', ${idx})">Approve ✅</button>
-                                <hr style="border:0; border-top:1px solid #222; margin:5px 0;">
-                                <select id="res-${doc.id}-${idx}">
-                                    <option value="">${langData[currentLang].rPrompt}</option>
-                                    <option value="invalid_txid">${langData[currentLang].r1}</option>
-                                    <option value="used_txid">${langData[currentLang].r2}</option>
-                                    <option value="amount_mismatch">${langData[currentLang].r3}</option>
-                                    <option value="wrong_network">${langData[currentLang].r4}</option>
-                                </select>
-                                <button class="clickable btn-rej" onclick="rejectTx('${doc.id}', ${idx})">Reject ❌</button>
-                            </div>
-                        </div>`;
-                    }
-                });
+                const data = doc.data();
+                if(data.requests) {
+                    data.requests.forEach((req, idx) => {
+                        if(req.status === 'pending') {
+                            hasRequests = true;
+                            list.innerHTML += `
+                            <div class="card">
+                                <p style="font-size:0.8rem; color:var(--grey)">Investor: ${doc.id}</p>
+                                <span class="txid-box" onclick="copyVal('${req.txid}')">${req.txid}</span>
+                                <div class="action-group">
+                                    <input type="number" id="amt-${doc.id}-${idx}" placeholder="${langData[currentLang].amt}">
+                                    <button class="clickable" onclick="approveTx('${doc.id}', ${idx})">Approve ✅</button>
+                                    <hr style="border:0; border-top:1px solid #222; margin:5px 0;">
+                                    <select id="res-${doc.id}-${idx}">
+                                        <option value="">${langData[currentLang].rPrompt}</option>
+                                        <option value="invalid_txid">${langData[currentLang].r1}</option>
+                                        <option value="used_txid">${langData[currentLang].r2}</option>
+                                        <option value="amount_mismatch">${langData[currentLang].r3}</option>
+                                        <option value="wrong_network">${langData[currentLang].r4}</option>
+                                    </select>
+                                    <button class="clickable btn-rej" onclick="rejectTx('${doc.id}', ${idx})">Reject ❌</button>
+                                </div>
+                            </div>`;
+                        }
+                    });
+                }
             });
-            if(!hasRequests) list.innerHTML = '<p style="color:var(--grey)">No pending requests.</p>';
+            if(!hasRequests) list.innerHTML = `<p style="color:var(--grey)">${currentLang === 'ar' ? 'لا يوجد طلبات معلقة' : 'No pending requests.'}</p>`;
         });
     }
 
-    function copyVal(v) { navigator.clipboard.writeText(v).then(() => alert(langData[currentLang].copy || "Copied!")); }
+    function copyVal(v) { navigator.clipboard.writeText(v).then(() => alert("Copied!")); }
 
     async function approveTx(ph, idx) {
-        const amt = document.getElementById(`amt-${ph}-${idx}`).value; if(!amt) return alert("Enter amount!");
+        const amtInput = document.getElementById(`amt-${ph}-${idx}`);
+        const amt = amtInput.value; if(!amt) return alert("Enter amount!");
         const ref = db.collection('investors').doc(ph);
+        
         await db.runTransaction(async (t) => {
             const s = await t.get(ref);
             let rs = s.data().requests;
@@ -205,7 +212,7 @@
             t.update(ref, { balance: (s.data().balance || 0) + parseFloat(amt), requests: rs });
             db.collection('audit_logs').add({ action: 'approve', investor: ph, amount: amt, by: auth.currentUser.phoneNumber, time: firebase.firestore.FieldValue.serverTimestamp() });
         });
-        alert('Approved Successfully!'); loadReqs();
+        alert('Done!');
     }
 
     async function rejectTx(ph, idx) {
@@ -215,7 +222,7 @@
         rs[idx].status = 'rejected'; rs[idx].reasonCode = rc;
         await ref.update({ requests: rs });
         db.collection('audit_logs').add({ action: 'reject', investor: ph, reason: rc, by: auth.currentUser.phoneNumber, time: firebase.firestore.FieldValue.serverTimestamp() });
-        alert('Rejected Successfully!'); loadReqs();
+        alert('Rejected!');
     }
 </script>
 </body>
