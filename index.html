@@ -3,65 +3,71 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Sarmad Admin | غرفة التحكم</title>
+    <title>Sarmad Pro | نظام الإدارة والرقابة</title>
     <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;700&family=Orbitron:wght@400;700&display=swap" rel="stylesheet">
     <style>
-        :root { --admin-green: #00ff88; --bg-dark: #000; --card-bg: #0a0a0a; }
-        body { background: var(--bg-dark); color: #ccc; font-family: 'Tajawal', sans-serif; margin: 0; padding: 20px; }
-        .header { display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #222; padding-bottom: 15px; margin-bottom: 30px; }
-        .logo { font-family: 'Orbitron', sans-serif; color: var(--admin-green); font-size: 1.5rem; letter-spacing: 2px; }
-        
-        table { width: 100%; border-collapse: collapse; background: var(--card-bg); border-radius: 10px; overflow: hidden; box-shadow: 0 0 20px rgba(0,255,136,0.05); }
-        th, td { padding: 15px; text-align: right; border-bottom: 1px solid #222; }
-        th { background: #111; color: var(--admin-green); font-size: 0.9rem; text-transform: uppercase; }
-        
-        tr:hover { background: #151515; }
-        .pending-row { border-right: 4px solid #ff9800; }
-        .approved-row { border-right: 4px solid var(--admin-green); }
-
-        .tx-id { font-family: monospace; font-size: 0.75rem; color: #888; background: #1a1a1a; padding: 5px; border-radius: 4px; display: block; max-width: 200px; overflow: hidden; text-overflow: ellipsis; }
-        
-        input[type="number"] { background: #1a1a1a; border: 1px solid #333; color: var(--admin-green); padding: 8px; border-radius: 5px; width: 100px; font-weight: bold; }
-        
-        button { background: var(--admin-green); color: #000; border: none; padding: 8px 15px; border-radius: 5px; cursor: pointer; font-weight: bold; transition: 0.3s; }
-        button:hover { background: #fff; transform: scale(1.05); }
-        
-        .status-tag { font-size: 0.8rem; padding: 3px 10px; border-radius: 10px; }
-        .status-pending { background: rgba(255, 152, 0, 0.2); color: #ff9800; }
-        .status-approved { background: rgba(0, 255, 136, 0.2); color: var(--admin-green); }
-
-        #auth-msg { text-align: center; margin-top: 50px; font-size: 1.2rem; color: var(--admin-green); font-family: 'Orbitron', sans-serif; }
-        .loader { border: 4px solid #111; border-top: 4px solid var(--admin-green); border-radius: 50%; width: 40px; height: 40px; animation: spin 1s linear infinite; margin: 20px auto; }
-        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        :root { --primary: #00ff88; --bg: #000; --card: #0a0a0a; }
+        body { background: var(--bg); color: #fff; font-family: 'Tajawal', sans-serif; margin: 0; padding: 20px; }
+        .container { max-width: 800px; margin: 0 auto; text-align: center; }
+        .logo { font-family: 'Orbitron', sans-serif; color: var(--primary); font-size: 1.5rem; margin-bottom: 30px; letter-spacing: 2px; }
+        .card { background: var(--card); border: 1px solid #222; padding: 20px; border-radius: 15px; margin-bottom: 20px; box-shadow: 0 5px 15px rgba(0,0,0,0.5); }
+        input { width: 80%; padding: 12px; margin: 10px 0; background: #111; border: 1px solid #333; color: #fff; border-radius: 8px; text-align: center; }
+        button { background: var(--primary); color: #000; border: none; padding: 12px 25px; border-radius: 8px; cursor: pointer; font-weight: bold; margin: 10px; }
+        table { width: 100%; border-collapse: collapse; margin-top: 20px; font-size: 0.9rem; }
+        th, td { border: 1px solid #222; padding: 12px; text-align: center; }
+        th { color: var(--primary); background: #111; }
+        .status-badge { padding: 4px 8px; border-radius: 4px; font-size: 0.7rem; }
+        .hidden { display: none; }
+        .owner-section { border: 2px solid var(--primary); padding: 15px; margin-top: 30px; border-radius: 10px; }
     </style>
 </head>
 <body>
 
-    <div class="header">
-        <div class="logo">SARMAD_PRO_CORE</div>
-        <div id="admin-info" style="font-size: 0.8rem; color: #666;">Admin Dashboard v1.0</div>
-    </div>
+    <div class="container">
+        <div class="logo">SARMAD_PRO_CONTROL</div>
 
-    <div id="loading-screen">
-        <div class="loader"></div>
-        <div id="auth-msg">INITIALIZING SECURE CONNECTION...</div>
-    </div>
-    
-    <div id="admin-content" style="display:none;">
-        <h2 style="color: #fff; margin-bottom: 20px;">قائمة طلبات الاستثمار</h2>
-        <table>
-            <thead>
-                <tr>
-                    <th>رقم الهاتف</th>
-                    <th>الرصيد (SRMD)</th>
-                    <th>رقم العملية (TXID)</th>
-                    <th>الحالة</th>
-                    <th>الإجراء</th>
-                </tr>
-            </thead>
-            <tbody id="investors-list">
-                </tbody>
-        </table>
+        <div id="auth-section" class="card">
+            <div id="step-1">
+                <h3>التحقق من هوية المسؤول</h3>
+                <input type="tel" id="phone" placeholder="+962xxxxxxxxx">
+                <button onclick="checkAdmin()">تحقق من الرقم</button>
+            </div>
+            
+            <div id="step-2" class="hidden">
+                <p style="color:var(--primary)">رقم معتمد ✅ جاري طلب الرمز...</p>
+                <div id="recaptcha-container"></div>
+                <input type="text" id="otp" placeholder="أدخل رمز OTP">
+                <button onclick="verifyOTP()">دخول النظام</button>
+            </div>
+            <p id="msg" style="color:red"></p>
+        </div>
+
+        <div id="dashboard" class="hidden">
+            <div class="card">
+                <h2 id="welcome-msg">مرحباً بك</h2>
+                <button onclick="location.reload()" style="background:#444; color:#fff">خروج</button>
+            </div>
+
+            <div id="owner-only" class="hidden owner-section card">
+                <h3 style="color:var(--primary)">إدارة المحاسبين (الموافقات)</h3>
+                <table id="staff-table">
+                    <thead>
+                        <tr><th>المحاسب</th><th>الحالة</th><th>تغيير الصلاحية</th></tr>
+                    </thead>
+                    <tbody id="staff-list"></tbody>
+                </table>
+            </div>
+
+            <div id="main-data" class="card">
+                <h3>طلبات المستثمرين والموافقات المالية</h3>
+                <table id="investor-table">
+                    <thead>
+                        <tr><th>المستثمر</th><th>الرصيد الحالي</th><th>تحديث الرصيد</th></tr>
+                    </thead>
+                    <tbody id="investor-list"></tbody>
+                </table>
+            </div>
+        </div>
     </div>
 
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
@@ -69,7 +75,6 @@
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
 
     <script>
-        // --- بيانات فيربيس الخاصة بك ---
         const firebaseConfig = {
             apiKey: "AIzaSyBVyEPs_xvz9Oryk-jpLev4ja7Sb1P6RaM",
             authDomain: "sarmad-web.firebaseapp.com",
@@ -83,74 +88,107 @@
         const auth = firebase.auth();
         const db = firebase.firestore();
 
-        // التحقق من حالة تسجيل الدخول
-        auth.onAuthStateChanged(user => {
+        // 1. التحقق من وجود الرقم في قائمة الإدارة قبل إرسال الرسالة
+        async function checkAdmin() {
+            const phone = document.getElementById('phone').value;
+            const msg = document.getElementById('msg');
+            msg.innerText = "جاري التحقق...";
+            
+            try {
+                const adminDoc = await db.collection('admins').doc(phone).get();
+                if (adminDoc.exists) {
+                    msg.innerText = "";
+                    document.getElementById('step-1').classList.add('hidden');
+                    document.getElementById('step-2').classList.remove('hidden');
+                    sendOTP(phone);
+                } else {
+                    msg.innerText = "هذا الرقم ليس له صلاحيات إدارية.";
+                }
+            } catch (e) { msg.innerText = "خطأ في التحقق."; }
+        }
+
+        function sendOTP(phone) {
+            window.recaptchaVerifier = new firebase.auth.RecaptchaVerifier('recaptcha-container', { 'size': 'invisible' });
+            auth.signInWithPhoneNumber(phone, window.recaptchaVerifier)
+                .then(res => { window.confirmationResult = res; })
+                .catch(err => { document.getElementById('msg').innerText = "خطأ: " + err.message; });
+        }
+
+        function verifyOTP() {
+            const code = document.getElementById('otp').value;
+            window.confirmationResult.confirm(code).then(() => {
+                location.reload();
+            }).catch(() => { document.getElementById('msg').innerText = "الرمز غير صحيح"; });
+        }
+
+        // 2. مراقبة حالة الدخول وتحميل البيانات بناءً على الرتبة
+        auth.onAuthStateChanged(async (user) => {
             if (user) {
-                // المستخدم مسجل دخول، حاول تحميل البيانات
-                // ملاحظة: إذا لم تكن "آدمن" في القواعد، سيرفض فيربيس القراءة هنا
-                loadInvestors();
-            } else {
-                // إذا لم يسجل دخول، ارجع لموقع الاكتتاب الرئيسي ليسجل دخول بالهاتف
-                window.location.href = "https://sarmadprotocol.com"; 
+                document.getElementById('auth-section').classList.add('hidden');
+                document.getElementById('dashboard').classList.remove('hidden');
+                
+                const adminData = (await db.collection('admins').doc(user.phoneNumber).get()).data();
+                document.getElementById('welcome-msg').innerText = "مرحباً: " + (adminData.role === 'owner' ? "المدير العام" : "محاسب");
+
+                if (adminData.role === 'owner') {
+                    document.getElementById('owner-only').classList.remove('hidden');
+                    loadStaffManagement(); // المالك يدير المحاسبين
+                }
+                
+                loadInvestorsData(adminData); // تحميل بيانات المستثمرين
             }
         });
 
-        function loadInvestors() {
-            db.collection('investors').orderBy('joinedAt', 'desc').onSnapshot(snapshot => {
-                const list = document.getElementById('investors-list');
-                const loadingScreen = document.getElementById('loading-screen');
-                const content = document.getElementById('admin-content');
-                
+        function loadStaffManagement() {
+            db.collection('admins').where('role', '==', 'staff').onSnapshot(snap => {
+                const list = document.getElementById('staff-list');
                 list.innerHTML = '';
-                loadingScreen.style.display = 'none';
-                content.style.display = 'block';
-
-                snapshot.forEach(doc => {
-                    const data = doc.data();
-                    const row = document.createElement('tr');
-                    row.className = data.status === 'pending' ? 'pending-row' : 'approved-row';
-                    
-                    const statusClass = data.status === 'pending' ? 'status-pending' : 'status-approved';
-                    const statusText = data.status === 'pending' ? 'قيد الانتظار' : 'تم الاعتماد';
-
-                    row.innerHTML = `
-                        <td style="font-weight:bold; color:#fff;">${doc.id}</td>
-                        <td>
-                            <input type="number" id="bal-${doc.id}" value="${data.balance || 0}" step="0.01">
-                        </td>
-                        <td>
-                            <span class="tx-id" title="${data.lastTxId || ''}">${data.lastTxId || 'لا يوجد'}</span>
-                        </td>
-                        <td>
-                            <span class="status-tag ${statusClass}">${statusText}</span>
-                        </td>
-                        <td>
-                            <button onclick="approveInvestor('${doc.id}')">تحديث</button>
-                        </td>
-                    `;
-                    list.appendChild(row);
+                snap.forEach(doc => {
+                    const s = doc.data();
+                    list.innerHTML += `
+                        <tr>
+                            <td>${doc.id}</td>
+                            <td>${s.isApprovedByOwner ? '✅ معتمد' : '❌ بانتظار موافقتك'}</td>
+                            <td><button onclick="toggleStaff('${doc.id}', ${!s.isApprovedByOwner})">
+                                ${s.isApprovedByOwner ? 'إيقاف' : 'تفعيل'}
+                            </button></td>
+                        </tr>`;
                 });
-            }, error => {
-                console.error(error);
-                document.getElementById('auth-msg').innerHTML = "ACCESS DENIED: Unauthorized Identity";
-                document.getElementById('auth-msg').style.color = "red";
             });
         }
 
-        function approveInvestor(phone) {
-            const newBalance = document.getElementById('bal-' + phone).value;
-            
-            if(confirm('تأكيد تحديث الرصيد للرقم: ' + phone + '\nالرصيد الجديد: ' + newBalance + ' SRMD')) {
-                db.collection('investors').doc(phone).update({
-                    balance: parseFloat(newBalance),
-                    status: 'approved',
-                    updatedAt: firebase.firestore.FieldValue.serverTimestamp()
-                }).then(() => {
-                    alert('تم تحديث بيانات المستثمر بنجاح ✅');
-                }).catch(err => {
-                    alert('خطأ في التحديث: تأكد أنك تملك صلاحيات الآدمن');
+        function toggleStaff(id, status) {
+            db.collection('admins').doc(id).update({ isApprovedByOwner: status });
+        }
+
+        function loadInvestorsData(adminInfo) {
+            db.collection('investors').onSnapshot(snap => {
+                const list = document.getElementById('investor-list');
+                list.innerHTML = '';
+                snap.forEach(doc => {
+                    const inv = doc.data();
+                    list.innerHTML += `
+                        <tr>
+                            <td>${doc.id}</td>
+                            <td>${inv.balance || 0} SRMD</td>
+                            <td>
+                                <input type="number" id="inp-${doc.id}" style="width:60px" placeholder="الجديد">
+                                <button onclick="updateInv('${doc.id}')">تحديث</button>
+                            </td>
+                        </tr>`;
                 });
-            }
+            }, err => {
+                document.getElementById('investor-list').innerHTML = "<tr><td colspan='3' style='color:orange'>بانتظار تفعيل صلاحياتك من المدير العام...</td></tr>";
+            });
+        }
+
+        function updateInv(phone) {
+            const val = document.getElementById('inp-'+phone).value;
+            if(!val) return;
+            db.collection('investors').doc(phone).update({
+                balance: parseFloat(val),
+                status: 'approved'
+            }).then(() => alert('تم تحديث رصيد المستثمر!'));
         }
     </script>
 </body>
