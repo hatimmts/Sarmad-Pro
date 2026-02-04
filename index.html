@@ -28,6 +28,10 @@
         .danger-zone { border: 2px solid var(--red) !important; }
         .section-title { color: var(--red); margin: 15px 0 8px 0; font-size: 0.85rem; font-weight: bold; }
         .divider { border: 0; border-top: 1px solid #333; margin: 20px 0; }
+        
+        /* New Style for Staff List */
+        .staff-item { display: flex; justify-content: space-between; align-items: center; background: #151515; padding: 10px; border-radius: 8px; margin-bottom: 8px; border: 1px solid #333; }
+        .staff-phone { font-family: monospace; color: #ccc; font-size: 0.9rem; }
     </style>
 </head>
 <body id="body-tag">
@@ -41,7 +45,6 @@
 </header>
 
 <div class="container" style="max-width: 500px; margin: auto;">
-    <!-- Login UI -->
     <div id="auth-ui" class="card">
         <h3 id="t-login">Admin Login</h3>
         <input type="tel" id="admin-phone" placeholder="+962xxxxxxxxx">
@@ -53,9 +56,7 @@
         </div>
     </div>
 
-    <!-- Dashboard -->
     <div id="dashboard" class="hidden">
-        <!-- Stats -->
         <div class="card" style="border-color: var(--gold);">
             <div class="stats-grid">
                 <div class="stat-box">
@@ -69,14 +70,20 @@
             </div>
         </div>
 
-        <!-- Add Accountant -->
         <div id="staff-card" class="card hidden" style="border: 1px solid var(--gold);">
-            <h4 style="color:var(--gold); margin:0 0 15px 0;">Add New Accountant</h4>
+            <h4 style="color:var(--gold); margin:0 0 15px 0;">Manage Accountants</h4>
+            
             <input type="tel" id="new-staff-phone" placeholder="+962xxxxxxxxx">
-            <button class="clickable" style="width:100%" onclick="addAccountant()">Add Accountant</button>
+            <button class="clickable" style="width:100%; margin-bottom: 15px;" onclick="addAccountant()">Add New Accountant</button>
+            
+            <div style="border-top: 1px solid #333; pt-3; text-align: left;">
+                <p style="color:var(--grey); font-size:0.8rem; margin: 15px 0 10px 0;">📋 Registered Staff List:</p>
+                <div id="accountant-list-container">
+                    <small style="color:#555">Loading list...</small>
+                </div>
+            </div>
         </div>
 
-        <!-- Update Price -->
         <div id="price-card" class="card hidden" style="border: 1px solid var(--gold);">
             <h4 id="t-price-title" style="color:var(--gold); margin:0 0 15px 0;">Update Token Price</h4>
             <div style="display:flex; gap:10px;">
@@ -85,11 +92,9 @@
             </div>
         </div>
 
-        <!-- Owner Tools - Delete Menu -->
         <div id="owner-tools" class="card hidden danger-zone">
             <h4 style="color:var(--red); margin-top:0;">🗑️ Data Management Tools</h4>
             
-            <!-- Delete Collections -->
             <p class="section-title">Delete Collections:</p>
             <select id="delete-target" style="border-color: var(--red); color: var(--red);">
                 <optgroup label="🔥 Full Reset">
@@ -114,20 +119,17 @@
             </select>
             <button class="clickable btn-rej" style="width:100%; margin-top:10px;" onclick="smartReset()">Execute Delete</button>
             
-            <!-- Delete Specific Investor -->
             <hr class="divider">
             <p class="section-title">Delete Specific Investor:</p>
             <input type="tel" id="target-investor" placeholder="+962xxxxxxxxx" style="margin-bottom: 8px;">
             <button class="clickable btn-rej" style="width:100%;" onclick="deleteSpecificInvestor()">Delete This Investor</button>
             
-            <!-- Maintenance Tools -->
             <hr class="divider">
             <p class="section-title">Maintenance Tools:</p>
             <button class="clickable" style="width:100%; margin-bottom: 8px; border-color: #666; color: #666;" onclick="exportAllData()">📥 Export All Data (Backup)</button>
             <button class="clickable" style="width:100%; border-color: #666; color: #666;" onclick="cleanDuplicateTxids()">🧹 Clean Duplicate TXIDs</button>
         </div>
 
-        <!-- Pending Requests -->
         <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px;">
             <h3 id="t-pending-title" style="margin:0;">Pending Requests</h3>
             <button class="clickable" onclick="loadReqs(true)" id="t-ref-btn" style="font-size:0.7rem;">Refresh</button>
@@ -258,6 +260,41 @@
         } catch(err) {
             alert('Error: ' + err.message);
         }
+    }
+
+    // New Function to Delete Accountant
+    async function deleteAccountant(phone) {
+        if(!confirm(`⚠️ Are you sure you want to DELETE accountant ${phone}?\n\nThey will lose access immediately.`)) return;
+        
+        try {
+            await db.collection('admins').doc(phone).delete();
+            alert("✅ Accountant deleted successfully.");
+        } catch(err) {
+            alert("Error: " + err.message);
+        }
+    }
+
+    // New Function to Load Accountants List
+    function loadAccountantsList() {
+        db.collection('admins').where('role', '==', 'accountant').onSnapshot(snap => {
+            const listDiv = document.getElementById('accountant-list-container');
+            listDiv.innerHTML = '';
+            
+            if(snap.empty) {
+                listDiv.innerHTML = '<small style="color:#555">No accountants registered yet.</small>';
+                return;
+            }
+            
+            snap.forEach(doc => {
+                const phone = doc.id;
+                listDiv.innerHTML += `
+                <div class="staff-item">
+                    <span class="staff-phone">👤 ${phone}</span>
+                    <button class="clickable btn-rej" style="padding: 5px 10px; font-size: 0.7rem;" onclick="deleteAccountant('${phone}')">Delete 🗑️</button>
+                </div>
+                `;
+            });
+        });
     }
 
     // ==========================================
@@ -592,6 +629,9 @@
                     document.getElementById('price-card').classList.remove('hidden');
                     document.getElementById('staff-card').classList.remove('hidden');
                     document.getElementById('owner-tools').classList.remove('hidden');
+                    
+                    // NEW: Load accountants list only for owner
+                    loadAccountantsList();
                 }
                 
                 // Listen to stats
@@ -746,5 +786,10 @@
         }
     }
 </script>
+
+    <div style="text-align: center; color: #444; font-size: 0.7rem; margin-top: 30px; padding-bottom: 20px;">
+    System Version: V1.0
+</div>
+    
 </body>
 </html>
