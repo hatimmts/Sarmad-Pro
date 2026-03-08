@@ -1,11 +1,11 @@
 {
   "network_name": "Sarmad Protocol",
   "network_id": "SRMD-MAINNET",
-  "protocol": "WEBRTC-P2P",
-  "bootstrap_page": "https://sarmad.pro/mining.html",
-  "signaling_server": "wss://signal.sarmad.pro",
-  "stun_servers": [
-    "stun:stun.l.google.com:19302"
+  "protocol": "TCP-P2P",
+  "default_port": 9333,
+  "seed_nodes": [
+    "your-home-ip:9333",
+    "your-laptop-ip:9333"
   ],
-  "genesis_source": "ON_CHAIN"
+  "bootstrap_page": "https://sarmad.pro/mining.html"
 }
