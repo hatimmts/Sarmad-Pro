@@ -1,0 +1,11 @@
+{
+  "network_name": "Sarmad Protocol",
+  "network_id": "SRMD-MAINNET",
+  "protocol": "WEBRTC-P2P",
+  "bootstrap_page": "https://sarmad.pro/mining.html",
+  "signaling_server": "wss://signal.sarmad.pro",
+  "stun_servers": [
+    "stun:stun.l.google.com:19302"
+  ],
+  "genesis_source": "ON_CHAIN"
+}
