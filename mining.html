@@ -24,7 +24,7 @@ border-radius:14px;text-decoration:none;width:fit-content}
 
 <div class="hero">
   <p>اتصل بالشبكة الرئيسية بضغطة واحدة</p>
-  <a class="bigbtn" href="sarmad://install">اتصال فوري بالشبكة</a>
+  <a class="bigbtn" id="btnWebNode" href="http://78.47.21.219:9334/node.html">اتصال فوري بالشبكة</a>
 </div>
 
 <div class="grid">
@@ -85,10 +85,11 @@ border-radius:14px;text-decoration:none;width:fit-content}
     var params = new URLSearchParams(window.location.search);
   var inviter = (params.get("inviter") || "").trim();
   var deepLink = inviter ? ("sarmad://install?inviter=" + encodeURIComponent(inviter)) : "sarmad://install";
+  var webNode = "http://78.47.21.219:9334/node.html" + (inviter ? ("?inviter=" + encodeURIComponent(inviter)) : "");
   var inviteLink = inviter ? ("https://sarmad.pro/mining.html?inviter=" + encodeURIComponent(inviter)) : "https://sarmad.pro/mining.html";
-  var btnConnect = document.querySelector(".bigbtn");
+  var btnConnect = document.getElementById("btnWebNode") || document.querySelector(".bigbtn");
   var btnOpen = document.querySelectorAll(".btn")[0];
-  if (btnConnect) btnConnect.href = deepLink;
+  if (btnConnect) btnConnect.href = webNode;
   if (btnOpen) btnOpen.href = deepLink;
   document.getElementById("btnCopyInvite").addEventListener("click", function (e) {
     e.preventDefault();
