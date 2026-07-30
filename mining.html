@@ -43,7 +43,8 @@ border-radius:14px;text-decoration:none;width:fit-content}
 </div>
 
 <div style="margin-top:30px">
-  <a class="btn" href="sarmad://install">📱 فتح التطبيق</a>
+  <div id="inviterBanner" style="display:none;margin-bottom:14px;padding:12px 14px;border-radius:12px;background:#14532d;color:#bbf7d0;font-size:14px;line-height:1.5"></div>
+  <a class="btn" id="btnOpenApp" href="sarmad://install">📱 فتح التطبيق</a>
   <a class="btn" id="btnDownload" href="downloads/SRMD.apk" download>⬇️ تحميل التطبيق</a>
   <a class="btn" href="#" id="btnCopyInvite">🔗 نسخ رابط الدعوة</a>
 </div>
@@ -82,27 +83,50 @@ border-radius:14px;text-decoration:none;width:fit-content}
   refreshStatus();
   setInterval(refreshStatus, 4000);
 
-    var params = new URLSearchParams(window.location.search);
+  var params = new URLSearchParams(window.location.search);
   var inviter = (params.get("inviter") || "").trim();
   var deepLink = inviter ? ("sarmad://install?inviter=" + encodeURIComponent(inviter)) : "sarmad://install";
   var webNode = "http://78.47.21.219:9334/node.html" + (inviter ? ("?inviter=" + encodeURIComponent(inviter)) : "");
   var inviteLink = inviter ? ("https://sarmad.pro/mining.html?inviter=" + encodeURIComponent(inviter)) : "https://sarmad.pro/mining.html";
   var btnConnect = document.getElementById("btnWebNode") || document.querySelector(".bigbtn");
-  var btnOpen = document.querySelectorAll(".btn")[0];
+  var btnOpen = document.getElementById("btnOpenApp");
+  var btnDownload = document.getElementById("btnDownload");
+  var banner = document.getElementById("inviterBanner");
   if (btnConnect) btnConnect.href = webNode;
   if (btnOpen) btnOpen.href = deepLink;
-  document.getElementById("btnCopyInvite").addEventListener("click", function (e) {
-    e.preventDefault();
-    var link = inviteLink;
+
+  function copyText(text, okMsg) {
     if (navigator.clipboard && navigator.clipboard.writeText) {
-      navigator.clipboard.writeText(link).then(function () {
-        alert("تم نسخ الرابط");
+      navigator.clipboard.writeText(text).then(function () {
+        if (okMsg) alert(okMsg);
       }).catch(function () {
-        prompt("انسخ الرابط:", link);
+        prompt("انسخ:", text);
       });
     } else {
-      prompt("انسخ الرابط:", link);
+      prompt("انسخ:", text);
     }
+  }
+
+  // APK download cannot carry the referral, so put the inviter address on the clipboard
+  // for the onboarding screen to pick up after install.
+  if (inviter) {
+    if (banner) {
+      banner.style.display = "block";
+      banner.textContent = "دعوة من: " + inviter + " — سيتم نسخ العنوان تلقائياً. بعد التثبيت افتح التطبيق أو الصق العنوان في خانة الإحالة.";
+    }
+    copyText(inviter);
+  }
+
+  if (btnDownload) {
+    btnDownload.addEventListener("click", function () {
+      if (!inviter) return;
+      copyText(inviter, "تم نسخ عنوان الدعوة. ثبّت التطبيق ثم افتحه — خانة الإحالة ستُملأ تلقائياً إن أمكن، أو الصق العنوان يدوياً.");
+    });
+  }
+
+  document.getElementById("btnCopyInvite").addEventListener("click", function (e) {
+    e.preventDefault();
+    copyText(inviteLink, "تم نسخ رابط الدعوة");
   });
 </script>
 </body>
