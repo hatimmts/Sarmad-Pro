@@ -1,134 +1,261 @@
 <!DOCTYPE html>
 <html lang="ar" dir="rtl">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>الاتصال بالشبكة — سرمد</title>
-<link rel="stylesheet" href="style.css">
-<style>
-.hero{background:#1e293b;padding:40px;border-radius:20px}
-.bigbtn{display:block;margin:20px auto;padding:16px 28px;
-background:#16a34a;color:#fff;font-size:20px;
-border-radius:14px;text-decoration:none;width:fit-content}
-.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:16px;margin-top:30px}
-.card{background:#0f172a;padding:18px;border-radius:14px;border:1px solid #334155}
-.stat{font-size:22px;margin-top:6px}
-.btn{display:inline-block;margin:6px;padding:10px 16px;border-radius:10px;background:#2563eb;color:#fff;text-decoration:none}
-</style>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>شبكة سرمد — Sarmad Network</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@400;600;700&family=IBM+Plex+Sans:wght@400;600;700&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --bg: #0b1220;
+      --bg2: #121a2b;
+      --fg: #e8eef7;
+      --muted: #94a3b8;
+      --line: #243047;
+      --accent: #1a9f5c;
+      --accent-hover: #15804a;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      min-height: 100vh;
+      color: var(--fg);
+      font-family: "IBM Plex Sans Arabic", "IBM Plex Sans", sans-serif;
+      background:
+        radial-gradient(900px 480px at 80% -10%, #163528 0%, transparent 55%),
+        radial-gradient(700px 400px at 0% 100%, #152238 0%, transparent 50%),
+        linear-gradient(180deg, var(--bg) 0%, var(--bg2) 100%);
+    }
+    .wrap {
+      max-width: 720px;
+      margin: 0 auto;
+      padding: 48px 20px 64px;
+    }
+    .brand {
+      font-size: clamp(2.4rem, 7vw, 3.4rem);
+      font-weight: 700;
+      letter-spacing: 0.02em;
+      margin: 0 0 10px;
+      line-height: 1.15;
+    }
+    .brand span {
+      display: block;
+      font-size: 0.42em;
+      font-weight: 600;
+      color: var(--muted);
+      margin-top: 8px;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+    }
+    .lead {
+      margin: 0 0 36px;
+      color: var(--muted);
+      font-size: 1.05rem;
+      line-height: 1.7;
+      max-width: 34em;
+    }
+    section {
+      border-top: 1px solid var(--line);
+      padding-top: 28px;
+      margin-top: 8px;
+    }
+    h2 {
+      margin: 0 0 8px;
+      font-size: 1.15rem;
+      font-weight: 600;
+    }
+    .section-note {
+      margin: 0 0 18px;
+      color: var(--muted);
+      font-size: 0.95rem;
+      line-height: 1.6;
+    }
+    .stats {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 12px;
+    }
+    @media (max-width: 560px) {
+      .stats { grid-template-columns: 1fr; }
+    }
+    .stat-label {
+      color: var(--muted);
+      font-size: 0.8rem;
+      margin-bottom: 6px;
+    }
+    .stat-value {
+      font-size: 1.35rem;
+      font-weight: 700;
+      font-variant-numeric: tabular-nums;
+    }
+    .stat-value.ok { color: #4ade80; }
+    .stat-value.warn { color: #fbbf24; }
+    .downloads {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      align-items: stretch;
+    }
+    .dl {
+      display: block;
+      text-align: center;
+      padding: 14px 18px;
+      background: var(--accent);
+      color: #fff;
+      text-decoration: none;
+      font-weight: 600;
+      border: 1px solid transparent;
+      transition: background 0.15s ease;
+    }
+    .dl:hover { background: var(--accent-hover); }
+    .dl.secondary {
+      background: transparent;
+      border-color: var(--line);
+      color: var(--fg);
+    }
+    .dl.secondary:hover { border-color: var(--accent); color: #bbf7d0; }
+    .dl small {
+      display: block;
+      margin-top: 4px;
+      font-weight: 400;
+      font-size: 0.8rem;
+      opacity: 0.85;
+    }
+    .facts {
+      margin: 0;
+      padding: 0;
+      list-style: none;
+      color: var(--muted);
+      font-size: 0.95rem;
+      line-height: 1.75;
+    }
+    .facts li + li { margin-top: 6px; }
+    .facts strong { color: var(--fg); font-weight: 600; }
+    .foot {
+      margin-top: 36px;
+      font-size: 0.9rem;
+    }
+    .foot a { color: var(--muted); }
+    .invite {
+      display: none;
+      margin-bottom: 18px;
+      padding: 12px 14px;
+      border: 1px solid #1f6b3a;
+      background: #0f1f14;
+      color: #bbf7d0;
+      font-size: 0.9rem;
+      line-height: 1.55;
+    }
+  </style>
 </head>
-
 <body>
-<div class="container">
+  <div class="wrap">
+    <p class="brand">سرمد<span>Sarmad Network</span></p>
+    <p class="lead">
+      شبكة لامركزية لعملة SRMD. شغّل عقدة على هاتفك أو على ويندوز، وشارك في إنتاج الكتل ومكافآت النشاط.
+    </p>
 
-<h1>🚀 الانضمام إلى شبكة سرمد</h1>
+    <div id="inviterBanner" class="invite"></div>
 
-<div class="hero">
-  <p>اتصل بالشبكة الرئيسية بضغطة واحدة</p>
-  <a class="bigbtn" id="btnWebNode" href="http://78.47.21.219:9334/node.html">اتصال فوري بالشبكة</a>
-</div>
+    <section>
+      <h2>حالة الشبكة</h2>
+      <p class="section-note">أرقام حية من المنسّق الرئيسي.</p>
+      <div class="stats">
+        <div>
+          <div class="stat-label">الحالة</div>
+          <div class="stat-value" id="netStatus">…</div>
+        </div>
+        <div>
+          <div class="stat-label">ارتفاع السلسلة</div>
+          <div class="stat-value" id="chainHeight">—</div>
+        </div>
+        <div>
+          <div class="stat-label">العقد النشطة</div>
+          <div class="stat-value" id="activeCount">—</div>
+        </div>
+      </div>
+    </section>
 
-<div class="grid">
-  <div class="card">
-    <div>حالة الشبكة</div>
-    <div class="stat" id="netStatus">…</div>
+    <section>
+      <h2>التحميلات</h2>
+      <p class="section-note">اختر الجهاز الذي تريد تشغيل عقدة عليه.</p>
+      <div class="downloads">
+        <a class="dl" id="btnDownload" href="downloads/SRMD1.15.apk" download>
+          تطبيق أندرويد
+          <small>SRMD1.15.apk — عقدة كاملة على الهاتف</small>
+        </a>
+        <a class="dl secondary" href="downloads/SRMD-Coordinator-1.16.zip" download>
+          منسّق ويندوز
+          <small>SRMD-Coordinator-1.16.zip — فك الضغط وشغّل SRMD1.16.exe من داخل المجلد</small>
+        </a>
+      </div>
+    </section>
+
+    <section>
+      <h2>عن الشبكة</h2>
+      <ul class="facts">
+        <li><strong>وقت الكتلة:</strong> يبدأ من 33 ثانية ويتدرج مع عمر الشبكة.</li>
+        <li><strong>الإجماع:</strong> أدوار إنتاج بين العقد النشطة عبر منسّق الدليل.</li>
+        <li><strong>ARSC:</strong> مكافأة حضور تلقائية كل 23 ساعة شبكة (نبضة كل 20 دقيقة).</li>
+        <li><strong>الإحالة:</strong> مكافأة للمدعوّين عبر رابط الدعوة على هذه الصفحة.</li>
+      </ul>
+    </section>
+
+    <p class="foot"><a href="index.html">العودة للمنصة</a></p>
   </div>
-  <div class="card">
-    <div>البلوك الحالي</div>
-    <div class="stat" id="chainHeight">—</div>
-  </div>
-  <div class="card">
-    <div>العقد المتصلة</div>
-    <div class="stat" id="activeCount">—</div>
-  </div>
-</div>
 
-<div style="margin-top:30px">
-  <div id="inviterBanner" style="display:none;margin-bottom:14px;padding:12px 14px;border-radius:12px;background:#14532d;color:#bbf7d0;font-size:14px;line-height:1.5"></div>
-  <a class="btn" id="btnOpenApp" href="sarmad://install">📱 فتح التطبيق</a>
-  <a class="btn" id="btnDownload" href="downloads/SRMD1.15.apk" download>⬇️ تحميل التطبيق (v1.15)</a>
-  <a class="btn" href="http://78.47.21.219:9334/downloads/SRMD-Coordinator-1.16.zip" download>Windows coordinator v1.16 (desktop app — unzip &amp; run)</a>
-  <a class="btn" href="#" id="btnCopyInvite">🔗 نسخ رابط الدعوة</a>
-</div>
+  <script>
+    var STATUS_URL = "/v1/status";
+    var elStatus = document.getElementById("netStatus");
+    var elHeight = document.getElementById("chainHeight");
+    var elActive = document.getElementById("activeCount");
 
-<div style="margin-top:40px">
-  <a href="index.html">⬅ العودة للرئيسية</a>
-</div>
-
-</div>
-<script>
-  // Live stats from VPS coordinator (appearance unchanged; numbers only).
-  var STATUS_URL = "http://78.47.21.219:9334/v1/status";
-  var elStatus = document.getElementById("netStatus");
-  var elHeight = document.getElementById("chainHeight");
-  var elActive = document.getElementById("activeCount");
-
-  function refreshStatus() {
-    fetch(STATUS_URL, { cache: "no-store" })
-      .then(function (res) {
-        if (!res.ok) throw new Error("bad status");
-        return res.json();
-      })
-      .then(function (data) {
-        elStatus.textContent = "🟢 تعمل";
-        elHeight.textContent = "#" + String(data.chainHeight != null ? data.chainHeight : 0);
-        var n = data.activeCount != null ? data.activeCount : 0;
-        elActive.textContent = n + " عقدة";
-      })
-      .catch(function () {
-        elStatus.textContent = "🔴 غير متصل";
-        elHeight.textContent = "—";
-        elActive.textContent = "—";
-      });
-  }
-
-  refreshStatus();
-  setInterval(refreshStatus, 4000);
-
-  var params = new URLSearchParams(window.location.search);
-  var inviter = (params.get("inviter") || "").trim();
-  var deepLink = inviter ? ("sarmad://install?inviter=" + encodeURIComponent(inviter)) : "sarmad://install";
-  var webNode = "http://78.47.21.219:9334/node.html" + (inviter ? ("?inviter=" + encodeURIComponent(inviter)) : "");
-  var inviteLink = inviter ? ("https://sarmad.pro/mining.html?inviter=" + encodeURIComponent(inviter)) : "https://sarmad.pro/mining.html";
-  var btnConnect = document.getElementById("btnWebNode") || document.querySelector(".bigbtn");
-  var btnOpen = document.getElementById("btnOpenApp");
-  var btnDownload = document.getElementById("btnDownload");
-  var banner = document.getElementById("inviterBanner");
-  if (btnConnect) btnConnect.href = webNode;
-  if (btnOpen) btnOpen.href = deepLink;
-
-  function copyText(text, okMsg) {
-    if (navigator.clipboard && navigator.clipboard.writeText) {
-      navigator.clipboard.writeText(text).then(function () {
-        if (okMsg) alert(okMsg);
-      }).catch(function () {
-        prompt("انسخ:", text);
-      });
-    } else {
-      prompt("انسخ:", text);
+    function refreshStatus() {
+      fetch(STATUS_URL, { cache: "no-store" })
+        .then(function (res) {
+          if (!res.ok) throw new Error("bad status");
+          return res.json();
+        })
+        .then(function (data) {
+          elStatus.textContent = "تعمل";
+          elStatus.className = "stat-value ok";
+          elHeight.textContent = "#" + String(data.chainHeight != null ? data.chainHeight : 0);
+          var n = data.activeCount != null ? data.activeCount : 0;
+          elActive.textContent = String(n);
+        })
+        .catch(function () {
+          elStatus.textContent = "غير متصل";
+          elStatus.className = "stat-value warn";
+          elHeight.textContent = "—";
+          elActive.textContent = "—";
+        });
     }
-  }
 
-  // APK download cannot carry the referral, so put the inviter address on the clipboard
-  // for the onboarding screen to pick up after install.
-  if (inviter) {
-    if (banner) {
+    refreshStatus();
+    setInterval(refreshStatus, 4000);
+
+    var params = new URLSearchParams(window.location.search);
+    var inviter = (params.get("inviter") || "").trim();
+    var banner = document.getElementById("inviterBanner");
+    var btnDownload = document.getElementById("btnDownload");
+
+    function copyText(text) {
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(text).catch(function () {});
+      }
+    }
+
+    if (inviter) {
       banner.style.display = "block";
-      banner.textContent = "دعوة من: " + inviter + " — سيتم نسخ العنوان تلقائياً. بعد التثبيت افتح التطبيق أو الصق العنوان في خانة الإحالة.";
+      banner.textContent =
+        "دعوة من: " + inviter + " — نُسخ العنوان إلى الحافظة. بعد تثبيت التطبيق الصقه في خانة الإحالة إن لزم.";
+      copyText(inviter);
+      btnDownload.addEventListener("click", function () {
+        copyText(inviter);
+      });
     }
-    copyText(inviter);
-  }
-
-  if (btnDownload) {
-    btnDownload.addEventListener("click", function () {
-      if (!inviter) return;
-      copyText(inviter, "تم نسخ عنوان الدعوة. ثبّت التطبيق ثم افتحه — خانة الإحالة ستُملأ تلقائياً إن أمكن، أو الصق العنوان يدوياً.");
-    });
-  }
-
-  document.getElementById("btnCopyInvite").addEventListener("click", function (e) {
-    e.preventDefault();
-    copyText(inviteLink, "تم نسخ رابط الدعوة");
-  });
-</script>
+  </script>
 </body>
 </html>
