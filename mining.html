@@ -148,9 +148,29 @@
       font-size: 0.9rem;
       line-height: 1.55;
     }
+    .page-version {
+      position: fixed;
+      top: 12px;
+      left: 14px;
+      z-index: 50;
+      margin: 0;
+      padding: 4px 8px;
+      font-family: "IBM Plex Sans", "IBM Plex Sans Arabic", sans-serif;
+      font-size: 0.75rem;
+      font-weight: 600;
+      letter-spacing: 0.04em;
+      color: var(--muted);
+      background: rgba(11, 18, 32, 0.72);
+      border: 1px solid var(--line);
+      border-radius: 6px;
+      direction: ltr;
+      pointer-events: none;
+      user-select: none;
+    }
   </style>
 </head>
 <body>
+  <p class="page-version" title="mining.html page version">v1.17</p>
   <div class="wrap">
     <p class="brand">سرمد<span>Sarmad Network</span></p>
     <p class="lead">
@@ -182,13 +202,13 @@
       <h2>التحميلات</h2>
       <p class="section-note">اختر الجهاز الذي تريد تشغيل عقدة عليه.</p>
       <div class="downloads">
-        <a class="dl" id="btnDownload" href="downloads/SRMD1.15.apk" download>
+        <a class="dl" id="btnDownload" href="downloads/SRMD1.16.apk" download>
           تطبيق أندرويد
-          <small>SRMD1.15.apk — عقدة كاملة على الهاتف</small>
+          <small>SRMD1.16.apk — عقدة كاملة على الهاتف</small>
         </a>
-        <a class="dl secondary" href="downloads/SRMD-Coordinator-1.16.zip" download>
+        <a class="dl secondary" href="downloads/SRMD-Coordinator-1.17.0.zip" download>
           منسّق ويندوز
-          <small>SRMD-Coordinator-1.16.zip — فك الضغط وشغّل SRMD1.16.exe من داخل المجلد</small>
+          <small>SRMD-Coordinator-1.17.0.zip — فك الضغط وشغّل SRMD1.17.0.exe من داخل المجلد</small>
         </a>
       </div>
     </section>
@@ -196,10 +216,11 @@
     <section>
       <h2>عن الشبكة</h2>
       <ul class="facts">
-        <li><strong>وقت الكتلة:</strong> يبدأ من 33 ثانية ويتدرج مع عمر الشبكة.</li>
-        <li><strong>الإجماع:</strong> أدوار إنتاج بين العقد النشطة عبر منسّق الدليل.</li>
-        <li><strong>ARSC:</strong> مكافأة حضور تلقائية كل 23 ساعة شبكة (نبضة كل 20 دقيقة).</li>
-        <li><strong>الإحالة:</strong> مكافأة للمدعوّين عبر رابط الدعوة على هذه الصفحة.</li>
+        <li><strong>وقت الكتلة:</strong> ثابت 33 ثانية — لا يتدرج مع عمر الشبكة.</li>
+        <li><strong>الإجماع:</strong> أدوار إنتاج عشوائية بين العقد النشطة لضمان الشفافية والعدالة، عبر منسّقات حاسوبية ومعالجات سحابية متعددة لتعزيز الأمان واللامركزية.</li>
+        <li><strong>ARSC (مكافأة النشاط):</strong> يُحسب التوزيع تلقائياً كل 23 ساعة شبكة؛ يجب على المستخدم الضغط على زر السحب (Claim) خلال 23 ساعة قبل بدء التوزيع التالي، وإلا يُحرق المبلغ المعلّق الذي لم يُسحب.</li>
+        <li><strong>الإحالة:</strong> مكافأة أبدية للمحيل من إنتاجية المستخدمين المحالين عن طريقه.</li>
+        <li><strong>قيمة العملة:</strong> تستمد قيمتها من عقد التخزين طويل الأمد (18.5 عاماً) ومن التطبيقات التي ستُبنى على الشبكة قريباً.</li>
       </ul>
     </section>
 
