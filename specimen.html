@@ -1,0 +1,62 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Specimen Studio · archival training</title>
+  <link rel="stylesheet" href="specimen.css">
+</head>
+<body>
+  <main class="shell">
+    <header class="hero">
+      <a class="back" href="/">← Sarmad Platform</a>
+      <p class="eyebrow">EDUCATIONAL SPECIMEN WORKFLOW</p>
+      <h1>Specimen Studio</h1>
+      <p>Practice archival capture with synthetic, non-circulating sample assets. This tool cannot create or edit legal tender.</p>
+    </header>
+
+    <section class="notice" aria-label="Safety notice">
+      <strong>For education and archives only</strong>
+      <span>Use the generated sample or a clearly marked non-negotiable object. Do not upload currency or other financial instruments.</span>
+    </section>
+
+    <section class="workspace" aria-label="Specimen project">
+      <div class="project-bar">
+        <label>Project name <input id="projectName" maxlength="80" value="Untitled specimen"></label>
+        <button id="saveProject" class="button">Save project</button>
+        <span id="saveStatus" role="status"></span>
+      </div>
+      <div class="sides">
+        <article class="side-card" data-side="front">
+          <div class="side-heading"><h2>Side A</h2><span class="pill">synthetic sample</span></div>
+          <div class="preview" id="frontPreview"><div class="empty">Generate a safe sample or choose an archival photo.</div></div>
+          <div class="actions"><button class="button primary sample" data-side="front">Generate safe sample</button><label class="button file-button">Choose marked image<input class="upload" data-side="front" type="file" accept="image/*"></label></div>
+          <div class="controls">
+            <label>Crop <input class="crop" data-side="front" type="range" min="0" max="35" value="0"> <output data-output="crop-front">0%</output></label>
+            <label>Perspective <input class="perspective" data-side="front" type="range" min="-12" max="12" value="0"> <output data-output="perspective-front">0°</output></label>
+            <label>Brightness <input class="brightness" data-side="front" type="range" min="70" max="130" value="100"> <output data-output="brightness-front">100%</output></label>
+          </div>
+        </article>
+        <article class="side-card" data-side="back">
+          <div class="side-heading"><h2>Side B</h2><span class="pill">synthetic sample</span></div>
+          <div class="preview" id="backPreview"><div class="empty">Generate a safe sample or choose an archival photo.</div></div>
+          <div class="actions"><button class="button primary sample" data-side="back">Generate safe sample</button><label class="button file-button">Choose marked image<input class="upload" data-side="back" type="file" accept="image/*"></label></div>
+          <div class="controls">
+            <label>Crop <input class="crop" data-side="back" type="range" min="0" max="35" value="0"> <output data-output="crop-back">0%</output></label>
+            <label>Perspective <input class="perspective" data-side="back" type="range" min="-12" max="12" value="0"> <output data-output="perspective-back">0°</output></label>
+            <label>Brightness <input class="brightness" data-side="back" type="range" min="70" max="130" value="100"> <output data-output="brightness-back">100%</output></label>
+          </div>
+        </article>
+      </div>
+    </section>
+
+    <section class="metadata">
+      <div><p class="eyebrow">ARCHIVAL TEXT ONLY</p><h2>OCR notes</h2><p class="muted">OCR is simulated for this educational demo. Edit descriptive text only; denomination and serial-number fields are intentionally unavailable.</p><button id="runOcr" class="button">Run sample OCR</button></div>
+      <label>Transcription / object description<textarea id="ocrText" maxlength="1000" placeholder="Example: Blue geometric study, printed on card stock…"></textarea></label>
+    </section>
+    <p class="privacy">Images stay in this browser's project storage. No uploads are sent to a server.</p>
+  </main>
+  <div class="watermark" aria-label="Permanent safety watermark">SPECIMEN / NOT LEGAL TENDER / NOT FOR CIRCULATION</div>
+  <script src="specimen.js"></script>
+</body>
+</html>

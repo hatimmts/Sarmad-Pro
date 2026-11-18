@@ -1,0 +1,9 @@
+<resources>
+    <style name="Theme.SarmadSpecimen" parent="android:style/Theme.Material.NoActionBar">
+        <item name="android:fontFamily">sans</item>
+        <item name="android:colorAccent">#60a5fa</item>
+        <item name="android:navigationBarColor">#0b1220</item>
+        <item name="android:statusBarColor">#0b1220</item>
+        <item name="android:windowLightStatusBar">false</item>
+    </style>
+</resources>
