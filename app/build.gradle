@@ -1,7 +1,11 @@
-plugins { id "com.android.application" }
+plugins {
+    id "com.android.application"
+    id "org.jetbrains.kotlin.android"
+}
 
-android { namespace "pro.sarmad.specimen"; compileSdk 35
-    defaultConfig { applicationId "pro.sarmad.specimen"; minSdk 23; targetSdk 35; versionCode 1; versionName "1.0" }
+android { namespace "pro.sarmad.specimen"; compileSdk 34
+    defaultConfig { applicationId "pro.sarmad.specimen"; minSdk 24; targetSdk 34; versionCode 1; versionName "1.0" }
+    kotlinOptions { jvmTarget = "17" }
 }
 
 // Keep one audited workflow source while packaging it as a native Android asset.

@@ -13,7 +13,7 @@ import android.widget.Button;
 import android.widget.LinearLayout;
 
 /** Native Android shell for the audited, offline specimen workflow. */
-public final class MainActivity extends Activity {
+final class MainActivityJavaLegacy extends Activity {
     @Override public void onCreate(Bundle state) {
         super.onCreate(state);
         WebView view = new WebView(this);
