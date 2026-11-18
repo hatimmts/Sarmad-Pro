@@ -30,7 +30,7 @@
         <article class="side-card" data-side="front">
           <div class="side-heading"><h2>Side A</h2><span class="pill">synthetic sample</span></div>
           <div class="preview" id="frontPreview"><div class="empty">Generate a safe sample or choose an archival photo.</div></div>
-          <div class="actions"><button class="button primary sample" data-side="front">Generate safe sample</button><label class="button file-button">Choose marked image<input class="upload" data-side="front" type="file" accept="image/*"></label></div>
+          <div class="actions"><button class="button primary sample" data-side="front">Generate safe sample</button><label class="button file-button">Capture / import marked image<input class="upload" data-side="front" type="file" accept="image/*" capture="environment"></label></div>
           <div class="controls">
             <label>Crop <input class="crop" data-side="front" type="range" min="0" max="35" value="0"> <output data-output="crop-front">0%</output></label>
             <label>Perspective <input class="perspective" data-side="front" type="range" min="-12" max="12" value="0"> <output data-output="perspective-front">0°</output></label>
@@ -40,7 +40,7 @@
         <article class="side-card" data-side="back">
           <div class="side-heading"><h2>Side B</h2><span class="pill">synthetic sample</span></div>
           <div class="preview" id="backPreview"><div class="empty">Generate a safe sample or choose an archival photo.</div></div>
-          <div class="actions"><button class="button primary sample" data-side="back">Generate safe sample</button><label class="button file-button">Choose marked image<input class="upload" data-side="back" type="file" accept="image/*"></label></div>
+          <div class="actions"><button class="button primary sample" data-side="back">Generate safe sample</button><label class="button file-button">Capture / import marked image<input class="upload" data-side="back" type="file" accept="image/*" capture="environment"></label></div>
           <div class="controls">
             <label>Crop <input class="crop" data-side="back" type="range" min="0" max="35" value="0"> <output data-output="crop-back">0%</output></label>
             <label>Perspective <input class="perspective" data-side="back" type="range" min="-12" max="12" value="0"> <output data-output="perspective-back">0°</output></label>
@@ -56,7 +56,7 @@
     </section>
     <p class="privacy">Images stay in this browser's project storage. No uploads are sent to a server.</p>
   </main>
-  <div class="watermark" aria-label="Permanent safety watermark">SPECIMEN / NOT LEGAL TENDER / NOT FOR CIRCULATION</div>
+  <div class="watermark" aria-label="Permanent bilingual safety watermark">SPECIMEN / NOT LEGAL TENDER / NOT FOR CIRCULATION · عَيِّنَة / لَيْسَتْ عُمْلَةً قَانُونِيَّةً / مَمْنُوعَةٌ مِنَ التَّدَاوُل</div>
   <script src="specimen.js"></script>
 </body>
 </html>
