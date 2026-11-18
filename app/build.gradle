@@ -1,0 +1,13 @@
+plugins { id "com.android.application" }
+
+android { namespace "pro.sarmad.specimen"; compileSdk 35
+    defaultConfig { applicationId "pro.sarmad.specimen"; minSdk 23; targetSdk 35; versionCode 1; versionName "1.0" }
+}
+
+// Keep one audited workflow source while packaging it as a native Android asset.
+tasks.register("syncSpecimenAssets", Copy) {
+    from(projectDir.parent) { include "specimen.html", "specimen.css", "specimen.js" }
+    into(layout.buildDirectory.dir("generated/specimenAssets"))
+}
+android.sourceSets.main.assets.srcDir(layout.buildDirectory.dir("generated/specimenAssets"))
+tasks.named("preBuild").configure { dependsOn("syncSpecimenAssets") }
